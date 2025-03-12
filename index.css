@@ -1,0 +1,100 @@
+body {
+    text-align: center;
+    color: #333333;
+    /*font-family: 'Inter', sans-serif; Trying another font */
+    font-family:monospace;
+    background-color: #F5F5F5;   
+}
+/*
+#logo{
+position: fixed;
+text-align: left;
+left: 2%;
+top: 2%;
+font-weight: 700;
+font-size: 50px;
+color: rgb(255, 255, 255);
+line-height: 40px;
+/*padding: 10px;
+background-color: #191919; */ /* this code makes the box around the log 
+}*/
+
+#editorContainer {
+    position: relative;
+    width: 70%;
+    margin:0 auto;
+}
+#progressContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: center;
+    padding: 10px;
+    width: 100%;
+
+
+}
+
+#progressBar {
+    width: 70%;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+
+}
+progress::-webkit-progress-value {
+    background-color: #007BFF;
+
+
+}
+progress::-webkit-progress-bar {
+    background-color:#F5F5F5; /* Background of the bar */
+    
+}
+
+#localDate {
+    text-align: left;
+    font-size: 20px;
+    margin-left: 7%;
+    margin-top: 80px;
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+#page {
+    position: relative;
+    width: 100%;
+    height: 80vh;
+    margin: 80px;
+    margin-top: 10px;
+    margin-left: 60px;
+    border: none;
+    resize: none;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow: hidden;
+    outline: none;
+    font-size: 20px;
+    color: #333333;
+    background-color: #F5F5F5;
+    /*font-family: 'Inter', sans-serif; Trying another font */
+    font-weight: 550;
+}
+#displayofWords  {
+    font-size: 20px;
+    display: inline;
+    position: fixed;
+    /*position: fixed; keeps the word count at the bottom */
+    bottom: 5%;
+    left: 2%;
+}
+#noOfWords{
+    font-size: 20px;
+}
+#textButton {
+    font-size: 40px;
+    cursor: pointer;
+    position: fixed;
+    bottom: 5%;
+    right: 2%;
+}

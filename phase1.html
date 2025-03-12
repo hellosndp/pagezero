@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="index.css">
+    <title>PageZero</title>
+</head>
+<body>
+    <!--<div id="logo">Page<br>Zero</div><-->
+    <div id="editorContainer">
+        <div id="progressContainer">
+            <progress id="progressBar" value="0" max="100"></progress><br>
+        </div>
+
+            <p id="displayofWords"> ✍️ : <span id="noOfWords">0</span></p><br>
+            <a href="https://forms.gle/rprXmLMw77LNaPPd7" target="_blank">
+            <div id="textButton">🌱</div>
+            </a>
+            <p id="localDate"></p>
+            <textarea id="page" 
+            placeholder=
+            "Every writer has their own rhythm—find yours!
+
+📖 Haruki Murakami – 1,000 words/day
+🎬 Stephen King – 2,000 words/day
+✨ J.K. Rowling – 1,000–3,000 words/day
+✍️ Neil Gaiman – 1,500 words/day
+🚀 George R.R. Martin – 300–500 words/day
+
+Some write fast, some write slow—what matters is showing up every day!" 
+            oninput="wordCount()"
+            contenteditable="true"></textarea><br></html>
+            <script src="script.js"></script>
+    </div>
+</body>
