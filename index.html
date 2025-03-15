@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--favicon image - emoji-->
+    <link rel="icon" type="image/png" href="https://emoji.aranja.com/static/emoji-data/img-apple-160/270d-fe0f.png">
     <link rel="stylesheet" href="index.css">
     <title>PageZero</title>
 </head>
@@ -18,19 +20,25 @@
             <div id="textButton">🌱</div>
             </a>
             <p id="localDate"></p>
-            <textarea id="page" 
+            <!--this need to change to div to get the rich text formating options-->
+            <textarea id="page" contenteditable
             placeholder=
-            "Every writer has their own rhythm—find yours!
+            "Every writer has their own rhythm. Let's find yours!
 
-📖 Haruki Murakami – 1,000 words/day
-🎬 Stephen King – 2,000 words/day
-✨ J.K. Rowling – 1,000–3,000 words/day
-✍️ Neil Gaiman – 1,500 words/day
-🚀 George R.R. Martin – 300–500 words/day
+📖 Haruki Murakami : 1,000 words/day
+🎬 Stephen King : 2,000 words/day
+✨ J.K. Rowling : 1,000–3,000 words/day
+✍️ Neil Gaiman : 1,500 words/day
+🚀 George R.R. Martin : 300–500 words/day
 
-Some write fast, some write slow—what matters is showing up every day!" 
+Some write fast, some write slow. What matters is showing up every day!
+
+🔥 Nail the day!" 
             oninput="wordCount()"
             contenteditable="true"></textarea><br></html>
             <script src="script.js"></script>
+            <div id="popupOverlay" class="popup-overlay">
+        
+    </div>
     </div>
 </body>
