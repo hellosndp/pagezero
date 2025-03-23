@@ -1,45 +1,81 @@
 body {
-    margin: 0;
-    padding: 0;
-    display: flex;
-    font-family: monospace;
+    text-align: center;
+    color: #333333;
+    /*font-family: 'Inter', sans-serif; Trying another font */
+    font-family:monospace;
+    background-color: #F5F5F5;   
 }
-#leftPanel {
-    /* background-color: antiquewhite; */
-    width: 20%;
+
+#logo{
+position: fixed;
+text-align: left;
+left: 2%;
+top: 2%;
+font-weight: 700;
+font-size: 50px;
+color: rgb(225, 222, 222);
+line-height: 40px;
+background-color: #20201f; 
+/*to get the box around the logo*/
+padding: 10px;
 }
-#rightPanel {
-    /* background-color: rgb(70, 70, 70); */
-    width: 15%;
-}
-#centerPanel {
-    /* background-color: aqua; */
+
+#editorContainer {
+    position: relative;
     width: 70%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
+    margin:0 auto;
 }
-#topPanel {
-    /* background-color: blue; */
-    position: sticky;
-    height: 100px;
+#progressContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: center;
+    padding: 10px;
     width: 100%;
 
 }
-#textEditor {
-    /* background-color: brown; */
-    flex-grow: 1;
-    overflow-y: auto;
-    width: 100%;
-    height: 150vh;   
+
+#progressBar {
+    width: 70%;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+
 }
+progress::-webkit-progress-value {
+    background-color: #207adb;
+    /*
+    Luxurious & Premium → Emerald Green (#50C878)
+    Modern & Vibrant → Teal Green (#0F9D58)
+    Bold & Eye-catching → Neon Green (#39FF14)
+    Natural & Trustworthy → Forest Green (#228B22)
+    Soft & Friendly → Mint Green (#98FF98)
+    */
+
+
+}
+progress::-webkit-progress-bar {
+    background-color:#F5F5F5; /* Background of the bar */
+    
+}
+
+#localDate {
+    text-align: left;
+    font-size: 20px;
+    margin-left: 7%;
+    margin-top: 80px;
+    font-weight: 600;
+    text-decoration: underline;
+    color:#434344;
+}
+
 #page {
-    /* position: relative; */
+    position: relative;
     width: 100%;
     height: 80vh;
-    /* margin: 80px; */
-    /* margin-top: 10px; */
-    /* margin-left: 60px; */
+    margin: 80px;
+    margin-top: 10px;
+    margin-left: 60px;
     border: none;
     resize: none;
     padding: 5px;
@@ -48,74 +84,22 @@ body {
     outline: none;
     font-size: 20px;
     color: #333333;
-    /* background-color: #F5F5F5; */
+    background-color: #F5F5F5;
     /*font-family: 'Inter', sans-serif; Trying another font */
     font-weight: 550;
 }
-#localDate {
-    text-align: left;
-    font-size: 20px;
-    /* margin-left: 7%;
-    margin-top: 80px; */
-    font-weight: 600;
-    text-decoration: underline;
-    color:#434344;
-}
 #displayofWords  {
     font-size: 20px;
-    /* display: inline; */
+    display: inline;
     position: fixed;
     /*position: fixed; keeps the word count at the bottom */
     bottom: 5%;
     left: 2%;
 }
-#timer {
-    font-size: 20px;
-    position: fixed;
-    bottom: 15%;
-    left: 2%;
-}
-#progress-container {
-    width: 80%;
-    background-color: #fffefe;
-    border-radius: 10px;
-    margin: 50px auto;
-    height: 10px;
-    overflow: hidden;
-}
-.progress-bar {
-    height: 100%;
-    width: 0%;
-    background-color: #207adb;
-    transition: width 1s linear;
-}
-#icon {
-    font-size: 24px;
-}
-#rightPanelIcon {
-    font-size: 24px;
-    bottom: 10%;
-    right: 2%;
-    position: fixed;
-}
-#copy-btn {
-    background-color: grey;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    font-size: 16px;
+#textButton {
+    font-size: 40px;
     cursor: pointer;
-    border-radius: 5px;
+    position: fixed;
+    bottom: 5%;
+    right: 2%;
 }
-
-#copy-btn:hover {
-    background-color: #4caf50;
-}
-
-#copy-text {
-    font-size: 14px;
-    color: green;
-    /* margin-left: 10px; */
-    display: none;
-}
-
