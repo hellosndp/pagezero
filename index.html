@@ -3,27 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--favicon image - emoji-->
     <link rel="icon" type="image/png" href="https://emoji.aranja.com/static/emoji-data/img-apple-160/270d-fe0f.png">
+    <link rel="stylesheet" href="index.css">
     <title>PageZero</title>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-        <div id="leftPanel">
-            <!--Here somehow icons should appear-->
-            <span id="displayofWords">0</span><br>
-            <span id="timer" >0:00</span>
-
+    <!--<div id="logo">Page<br>Zero</div><-->
+    <div id="editorContainer">
+        <div id="progressContainer">
+            <progress id="progressBar" value="0" max="100"></progress><br>
         </div>
-        <div id="centerPanel">
-            <div id="topPanel">
-                <div id="progress-container">
-                    <div id="progressBar" class="progress-bar"></div>
-                </div>
-            </div>
-            <div id="localDate"></div>
-            <div id="textEditor">
-                <p id="localDate"></p>
-                <textarea id="page" contenteditable
+
+            <p id="displayofWords"> ✍️ : <span id="noOfWords">0</span></p><br>
+            <a href="https://forms.gle/rprXmLMw77LNaPPd7" target="_blank">
+            <div id="textButton">🌱</div>
+            </a>
+            <p id="localDate"></p>
+            <!--this need to change to div to get the rich text formating options-->
+            <textarea id="page" contenteditable
             placeholder=
             "Every writer has their own rhythm. Let's find yours!
 
@@ -37,16 +35,10 @@ Some write fast, some write slow. What matters is showing up every day!
 
 🔥 Nail the day!" 
             oninput="wordCount()"
-            contenteditable="true"></textarea><br>
-                
-            </div>
-        </div>
-        <div id="rightPanel">
-            <a href="https://forms.gle/rprXmLMw77LNaPPd7" target="_blank">
-                <div id="rightPanelIcon">❤️</div>
-            </a>
-        </div>
-        <script src="script.js"></script>
-    
+            contenteditable="true"></textarea><br></html>
+            <script src="script.js"></script>
+            <div id="popupOverlay" class="popup-overlay">
+        
+    </div>
+    </div>
 </body>
-</html>
