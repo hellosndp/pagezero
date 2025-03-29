@@ -1,105 +1,123 @@
 body {
-    text-align: center;
-    color: #333333;
-    /*font-family: 'Inter', sans-serif; Trying another font */
-    font-family:monospace;
-    background-color: #F5F5F5;   
+    margin: 0;
+    padding: 0;
+    /* background-color: rgb(16,18,23,255); */
+    /* color: antiquewhite; */
 }
 
-#logo{
-position: fixed;
-text-align: left;
-left: 2%;
-top: 2%;
-font-weight: 700;
-font-size: 50px;
-color: rgb(225, 222, 222);
-line-height: 40px;
-background-color: #20201f; 
-/*to get the box around the logo*/
-padding: 10px;
+#container {
+    display: flex;
+    font-family: monospace;
 }
-
-#editorContainer {
-    position: relative;
+#leftPanel {
+    /* background-color: antiquewhite; */
+    /* background-color: rgb(16,18,23,255); */
+    width: 20%;
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+}
+#rightPanel {
+    /* background-color: rgb(74, 197, 103); */
+    /* background-color:rgb(16,18,23,255); */
+    width: 10%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Push items to the right */
+    align-items: flex-end;
+    padding: 20px;
+}
+#centerPanel {
+    /* background-color: aqua; */
+    /* background-color:rgb(16,18,23,255); */
     width: 70%;
-    margin:0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
-#progressContainer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    text-align: center;
-    padding: 10px;
-    width: 100%;
-
+#center-topPanel{
+        /* background-color: blue; */
+        /* background-color: rgb(16,18,23,255); */
+        position: sticky;
+        height: 100px;
+        width: 100%;
 }
-
-#progressBar {
-    width: 70%;
-    height: 10px;
-    border-radius: 5px;
-    overflow: hidden;
-
+#center-textArea{
+     /* background-color: brown; */
+     flex-grow: 1;
+     overflow-y: auto;
+     width: 100%;
+     height: 150vh; 
 }
-progress::-webkit-progress-value {
-    background-color: #207adb;
-    /*
-    Luxurious & Premium → Emerald Green (#50C878)
-    Modern & Vibrant → Teal Green (#0F9D58)
-    Bold & Eye-catching → Neon Green (#39FF14)
-    Natural & Trustworthy → Forest Green (#228B22)
-    Soft & Friendly → Mint Green (#98FF98)
-    */
-
-
-}
-progress::-webkit-progress-bar {
-    background-color:#F5F5F5; /* Background of the bar */
-    
-}
-
-#localDate {
-    text-align: left;
-    font-size: 20px;
-    margin-left: 7%;
-    margin-top: 80px;
-    font-weight: 600;
-    text-decoration: underline;
-    color:#434344;
-}
-
-#page {
-    position: relative;
+#textInput{
     width: 100%;
     height: 80vh;
-    margin: 80px;
-    margin-top: 10px;
-    margin-left: 60px;
     border: none;
     resize: none;
-    padding: 5px;
+    margin-top: 10px;
+    /* padding: 5px; */
     box-sizing: border-box;
-    /*overflow: hidden;*/
     outline: none;
     font-size: 20px;
+    line-height: 1.6;
     color: #333333;
-    background-color: #F5F5F5;
-    /*font-family: 'Inter', sans-serif; Trying another font */
-    font-weight: 550;
+    /* font-weight: 100px; */
+    /* background-color: rgb(16,18,23,255); */
 }
-#displayofWords  {
-    font-size: 20px;
-    display: inline;
-    position: fixed;
-    /*position: fixed; keeps the word count at the bottom */
-    bottom: 5%;
-    left: 2%;
+#progress-container {
+    width: 100%;  /* Fixed width */
+    /* background-color: #fffefe; */
+    height: 10px;
+    margin: 50px auto;
+    border-radius: 10px; /* Smooth edges */
+    overflow: hidden; /* Prevents overflow issues */
+
 }
-#textButton {
-    font-size: 40px;
+#progress-bar {
+    width: 0%;
+    height: 100%;
+    /* background-color: #207adb; */
+    background-color: rgb(74, 75, 73);
+    /*transition: width 1s linear;*/
+}
+
+/* button code */
+#restartButton {
+    font-size: 32px;
+    margin: 5px;
     cursor: pointer;
-    position: fixed;
-    bottom: 5%;
-    right: 2%;
+}
+#icon {
+    margin-left: 20px;
+    font-size: 20px;
+}
+
+#btn_feedback {
+    font-size: 26px;
+    margin: 5px; 
+    cursor: pointer; 
+}
+#copyMessage {
+    margin-left: 10px;
+    color: green;
+    font-size: 10px;
+    display: none;
+}
+.hidden {
+    display: none;
+}
+#copyButton{
+    font-size: 26px;
+    margin: 5px; 
+    cursor: pointer;
+}
+#localDate {
+    font-size: 20px;
+    text-decoration: underline;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+#text {
+    font-size: 20px;
+    font-weight: 600;
 }
