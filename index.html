@@ -3,42 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!--favicon image - emoji-->
+    <title>pageZero</title>
     <link rel="icon" type="image/png" href="https://emoji.aranja.com/static/emoji-data/img-apple-160/270d-fe0f.png">
-    <link rel="stylesheet" href="index.css">
-    <title>PageZero</title>
+
+    <link rel="stylesheet" href="styles.css">
+    </style>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XWTK2XB4T3'); // Replace with your Measurement ID
+    </script>
 </head>
 <body>
-    <!--<div id="logo">Page<br>Zero</div><-->
-    <div id="editorContainer">
-        <div id="progressContainer">
-            <progress id="progressBar" value="0" max="100"></progress><br>
-        </div>
-
-            <p id="displayofWords"> ✍️ : <span id="noOfWords">0</span></p><br>
-            <a href="https://forms.gle/rprXmLMw77LNaPPd7" target="_blank">
-            <div id="textButton">🌱</div>
-            </a>
-            <p id="localDate"></p>
-            <!--this need to change to div to get the rich text formating options-->
-            <textarea id="page" contenteditable
-            placeholder=
-            "Every writer has their own rhythm. Let's find yours!
-
-📖 Haruki Murakami : 1,000 words/day
-🎬 Stephen King : 2,000 words/day
-✨ J.K. Rowling : 1,000–3,000 words/day
-✍️ Neil Gaiman : 1,500 words/day
-🚀 George R.R. Martin : 300–500 words/day
-
-Some write fast, some write slow. What matters is showing up every day!
-
-🔥 Nail the day!" 
-            oninput="wordCount()"
-            contenteditable="true"></textarea><br></html>
-            <script src="script.js"></script>
-            <div id="popupOverlay" class="popup-overlay">
+    <div id="container">
+    <div id="leftPanel">
+        <span id="icon"><img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/270d-fe0f.png" alt="wordcount Emoji" width="20" height="20">: <span id="wordCount">0</span></span><br>
+        <span id="icon"><img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/23f0.png" alt="Time Emoji" width="20" height="20">: <span id="wordCount"></span>  <span id="timer">0</span></span><br>
+        <!-- <span id="icon">🎬:  <span id="sessionCount">0</span></span><br> -->
         
+
     </div>
+    <div id="centerPanel">
+        <div id="center-topPanel">
+            <div id="progress-container">
+                <div id="progress-bar"></div>
+            </div>
+        </div>
+        <div id="center-textArea">
+            <span id="text"><span id="daynumber"></span></span>
+            <span id="localDate"></span>
+            
+           
+            <textarea id="textInput" contenteditable
+                placeholder=
+                "No excuses. Just words. Start now!
+
+    📖 Haruki Murakami: 1,000 words/day
+    🎬 Stephen King: 2,000 words/day
+    ✨ J.K. Rowling: 1,000–3,000 words/day
+    ✍️ Neil Gaiman: 1,500 words/day
+    🚀 George R.R. Martin: 300–500 words/day
+                
+The best writers show up. The next 10 minutes could be the most
+important part of your day.
+
+🔥Make them count!" ></textarea>
+
+
+        </div>
     </div>
+    <div id="rightPanel">
+        <span id="copyButton"><img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f4cb.png" alt="Feedback Emoji" width="32" height="32"></span>
+        <span id="copyMessage" class="hidden">Copied!</span>
+        <span id="btn_feedback"><a href="https://forms.gle/raZ6h4MTe7mSBzD2A" target="_blank" rel="noopener noreferrer">
+            <img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f34e.png" alt="Feedback Emoji" width="32" height="32"></a>
+        </span>
+        <!-- <span id="icon1">❤️</span> -->
+        <span id="restartButton"><img src="https://emoji.aranja.com/static/emoji-data/img-apple-160/1f501.png" alt="restart Emoji" width="32" height="32"></span>
+    </div>
+    
+    <script src="script.js"></script>
+</div>
 </body>
+</html>
