@@ -19,7 +19,7 @@ document.getElementById("localDate").innerHTML = today.toLocaleDateString('en-US
 let timeLeft = 0; // Timer starts from 0 and counts up to 10
 let countdown;
 let isPaused = false;
-// let sessionCount = 0; // Tracks total completed sessions
+let sessionCount = 0; // Tracks total completed sessions
 
 
 
@@ -28,11 +28,13 @@ function updateTimer() {
     if (!isPaused) {
         document.getElementById("timer").innerText = timeLeft;
 
-        if (timeLeft >= 600) {//change 600 to 10 for testing
+        if (timeLeft >= 300) {
             clearInterval(countdown);
-            // sessionCount++; // Increase session count when 10 seconds are up
-            // document.getElementById("sessionCount").innerText = sessionCount;
-            document.getElementById("progress-bar").style.width = (timeLeft / 600) * 100 + "%";//change 600 to 10 for testing
+            sessionCount++; // Increase session count when 10 seconds are up
+            document.getElementById("sessionCount").innerText = sessionCount;
+            document.getElementById("progress-bar").style.width = (timeLeft / 300) * 100 + "%";
+
+            
 
             // Delay alert slightly so user sees "10"
             setTimeout(() => {
@@ -40,7 +42,10 @@ function updateTimer() {
                     showAlertPopup(
                         "That's impressive!",
                         "https://i.etsystatic.com/21877275/r/il/a6f9ab/5793110811/il_1588xN.5793110811_ky13.jpg",
-                        "🗓️ " + today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) + "\n #10minWritingChallenge ✅" + "\n✍️ " + document.getElementById("wordCount").textContent + " words",
+                        "🗓️ " + today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        + "\n⏰ " + (sessionCount * 5) + " min of writing"
+                        + "\n✍️ " + document.getElementById("wordCount").textContent + " words"
+                        +"\n🏃‍♀️ " + Math.floor((document.getElementById("wordCount").textContent)/(5 * sessionCount)) + " WPM",
                         "Your session summary"
                     );
                 }, 100);
@@ -50,7 +55,7 @@ function updateTimer() {
         } else {
             timeLeft++;
             // Move progress bar update after incrementing timeLeft
-            document.getElementById("progress-bar").style.width = (timeLeft / 600) * 100 + "%";//change 600 to 10 for testing
+            document.getElementById("progress-bar").style.width = (timeLeft / 300) * 100 + "%";
 
         }
     }
@@ -146,7 +151,7 @@ function showAlertPopup(title,imageUrl,stats,message) {
     // Image
     let image = document.createElement("img");
     image.src = imageUrl;
-    image.style.width = "250px";
+    image.style.width = "200px";
     image.style.marginBottom = "5px";
 
     // stats
@@ -154,7 +159,7 @@ function showAlertPopup(title,imageUrl,stats,message) {
     statsText.innerText = stats;
     statsText.style.fontFamily = "monospace";
     statsText.style.textAlign = "left";
-    statsText.style.fontSize = "18px";
+    statsText.style.fontSize = "24px";
     statsText.style.color = "black";
     statsText.style.marginLeft = "30px";
     statsText.style.marginBottom = "50px";
@@ -173,6 +178,7 @@ function showAlertPopup(title,imageUrl,stats,message) {
     let btn_popup_continue = document.createElement("button");
     btn_popup_continue.innerText = "Continue";
     btn_popup_continue.style.fontFamily = "monospace";
+    btn_popup_continue.style.fontSize = "18px";
     btn_popup_continue.style.margin = "5px";
     btn_popup_continue.style.padding = "15px";
     btn_popup_continue.style.border = "none";
@@ -224,22 +230,23 @@ function showAlertPopup(title,imageUrl,stats,message) {
     // };
 
     // Share Button
-    let shareBtn = document.createElement("button");
-    shareBtn.innerText = "Share with Friends!";
-    shareBtn.style.fontFamily = "monospace";
-    shareBtn.style.margin = "20px";
-    shareBtn.style.fontSize = "18px";
-    shareBtn.style.padding = "15px";
-    shareBtn.style.border = "none";
-    shareBtn.style.borderRadius = "5px";
-    shareBtn.style.background = "rgb(74, 75, 73)";
-    shareBtn.style.color = "white";
-    shareBtn.style.cursor = "pointer";
-    shareBtn.onclick = function() {
+    let btn_popup_share = document.createElement("button");
+    btn_popup_share.innerText = "Challenge a Friend!";
+    btn_popup_share.style.fontFamily = "monospace";
+    btn_popup_share.style.margin = "20px";
+    btn_popup_share.style.fontSize = "18px";
+    btn_popup_share.style.padding = "15px";
+    btn_popup_share.style.border = "none";
+    btn_popup_share.style.borderRadius = "5px";
+    btn_popup_share.style.background = "rgb(74, 75, 73)";
+    btn_popup_share.style.color = "white";
+    btn_popup_share.style.cursor = "pointer";
+    btn_popup_share.onclick = function() {
         let shareText = "🗓️ " +today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        + "\n #10minWritingChallenge ✅"
-        + "\n✍️ " + document.getElementById("wordCount").textContent + " words"
-        +"\n🌎pagezero.app" ;
+        + "\n⏰ " + sessionCount + " min of writing" // words
+        + "\n✍️ " + document.getElementById("wordCount").textContent + " words" // words
+        + "\n🏃‍♀️ " + Math.floor(document.getElementById("wordCount").textContent/(sessionCount * 5)) + " WPM"// WPM for 3 min
+        +"\n🌎 pagezero.app" ;
         navigator.clipboard.writeText(shareText).then(() => {
             alert("Copied to clipboard!");
         });
@@ -248,11 +255,11 @@ function showAlertPopup(title,imageUrl,stats,message) {
     // Append elements to alert box
     alertBox.appendChild(titleText);
     alertBox.appendChild(image);
-    alertBox.appendChild(messageText);
+    // alertBox.appendChild(messageText);
     alertBox.appendChild(statsText);
     
     
-    alertBox.appendChild(shareBtn);
+    alertBox.appendChild(btn_popup_share);
     alertBox.appendChild(btn_popup_continue);
     // alertBox.appendChild(btn_popup_close);
     // alertBox.appendChild(donateBtn);
@@ -265,36 +272,40 @@ function showAlertPopup(title,imageUrl,stats,message) {
 // google analytics tracking 
 
 // Function to send event to GA4
-function trackEvent(eventName, eventCategory = 'User Interaction') {
-    gtag('event', eventName, {
-        'event_category': eventCategory
-    });
-}
-
-// Tracking button clicks
-document.getElementById("copyButton")?.addEventListener("click", () => trackEvent('copyButton'));
-document.getElementById("btn_feedback")?.addEventListener("click", () => trackEvent('btn_feedback'));
-document.getElementById("restartButton")?.addEventListener("click", () => trackEvent('restartButton'));
-
-// Function to track popup button clicks
-function trackPopupButtonClick(buttonId, eventName) {
-    document.getElementById(buttonId)?.addEventListener("click", function () {
-        gtag("event", eventName, {
-            event_category: "Popup Interaction",
-            event_label: `Clicked ${eventName}`
+    function trackEvent(eventName, eventCategory = 'User Interaction') {
+        gtag('event', eventName, {
+            'event_category': eventCategory
         });
+        console.log(`GA Event Tracked: ${eventName}`); // Optional: for debugging
 
-        console.log(`GA Event Sent: ${eventName}`); // Debugging log
+    }
+
+// // Tracking button clicks
+    document.getElementById("copyButton")?.addEventListener("click", () => trackEvent('copyButton'));
+    document.getElementById("btn_feedback")?.addEventListener("click", () => trackEvent('btn_feedback'));
+    document.getElementById("restartButton")?.addEventListener("click", () => trackEvent('restartButton'));
+
+    document.addEventListener("click", function (e) {
+        const text = e.target?.textContent?.trim().toLowerCase();//converting everything into lowercase
+    
+        if (!text) return;
+    
+        if (text === "continue") {
+            trackEvent("popup_continue", "Popup Interaction");
+        } else if (text === "close") {
+            trackEvent("popup_close", "Popup Interaction");
+        } else if (text === "donate") {
+            trackEvent("popup_donate", "Popup Interaction");
+        } else if (text === "challenge a friend!") { // the text should always be in lowercase
+            trackEvent("popup_share", "Popup Interaction");
+        }
     });
-}
+    
 
-// Attach tracking to popup buttons
-trackPopupButtonClick("btn_popup_continue", "popup_continue");
-trackPopupButtonClick("btn_popup_close", "popup_close");
-trackPopupButtonClick("btn_popup_donate", "popup_donate");
-trackPopupButtonClick("btn_popup_share", "popup_share");
 
-// //key events - word counts
+
+
+// // //key events - word counts
 let wordCount = 0; // Assuming you have a way to track words
 
 function updateWordCount(newCount) {
@@ -309,7 +320,7 @@ function updateWordCount(newCount) {
     }
 }
 
-// Example: Call updateWordCount() whenever the user types
+// // Example: Call updateWordCount() whenever the user types
 let trackedEvents = new Set(); // Keeps track of which events have been sent
 
 document.getElementById("textInput")?.addEventListener("input", function() {
@@ -324,7 +335,7 @@ document.getElementById("textInput")?.addEventListener("input", function() {
         1667: "1667words"
     };
 
-    // Check if the user reaches a milestone
+//     // Check if the user reaches a milestone
     for (let milestone in milestones) {
         if (words >= milestone && !trackedEvents.has(milestone)) {
             trackedEvents.add(milestone); // Mark as sent
@@ -340,18 +351,20 @@ document.getElementById("textInput")?.addEventListener("input", function() {
     }
 });
 
-//auto-typing effect 
-const text = `Just 10 minutes. No pressure, no distractions—just you and your words. 
-No logins, no data tracking—just pure writing.
+//auto-typing effect
+const text = `
+Welcome to PageZero 👋
 
-Here’s how it works:
-⏰ Write for 10 minutes. No stopping, no second-guessing.
-✅ No edits. Just let the words flow.
-🏆 Share progress.One session at a time.
+    Simple. Write for 5 minutes. No login. No pressure.
 
-You don’t need to be ready. 
-Try the #10minWritingChallenge now! 🚀
-You just need to start. `;
+    Here’s how it works:
+    ✍️ Write for 5 minutes straight
+    🧑‍🤝‍🧑 Challenge a friend to do the same
+
+    Stuck? Try this prompt:
+    “Every time you forget something, someone else seems to remember it for you.”
+    
+    Ready? Let’s go →`;
 
 let index = 0;
 function typeText() {
@@ -372,7 +385,7 @@ function updateWordCount() {
 
 document.getElementById("textInput").addEventListener("input", updateWordCount);
 
-window.onload = typeText; 
+window.onload = typeText;
 
-    window.onload = typeText; // Start typing when page loads
+window.onload = typeText; // Start typing when page loads
 
