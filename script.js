@@ -243,7 +243,7 @@ function showAlertPopup(title,imageUrl,stats,message) {
     btn_popup_share.style.cursor = "pointer";
     btn_popup_share.onclick = function() {
         let shareText = "🗓️ " +today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        + "\n⏰ " + sessionCount + " min of writing" // words
+        + "\n⏰ " + sessionCount * 5+ " min of writing" // words
         + "\n✍️ " + document.getElementById("wordCount").textContent + " words" // words
         + "\n🏃‍♀️ " + Math.floor(document.getElementById("wordCount").textContent/(sessionCount * 5)) + " WPM"// WPM for 3 min
         +"\n🌎 pagezero.app" ;
@@ -359,7 +359,7 @@ Welcome to PageZero 👋
 
     Here’s how it works:
     ✍️ Write for 5 minutes straight
-    🧑‍🤝‍🧑 Challenge a friend to do the same
+    ⚔️ Challenge a friend to do the same
 
     Stuck? Try this prompt:
     “Every time you forget something, someone else seems to remember it for you.”
