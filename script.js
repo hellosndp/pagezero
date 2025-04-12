@@ -242,11 +242,15 @@ function showAlertPopup(title,imageUrl,stats,message) {
     btn_popup_share.style.color = "white";
     btn_popup_share.style.cursor = "pointer";
     btn_popup_share.onclick = function() {
-        let shareText = "🗓️ " +today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        let shareText = "✍️ I just did a #5minWritingChallenge on https://PageZero.app"
+        +"\n"
+        + "\n🗓️ " +today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         + "\n⏰ " + sessionCount * 5+ " min of writing" // words
         + "\n✍️ " + document.getElementById("wordCount").textContent + " words" // words
         + "\n🏃‍♀️ " + Math.floor(document.getElementById("wordCount").textContent/(sessionCount * 5)) + " WPM"// WPM for 3 min
-        +"\n🌎 pagezero.app" ;
+        +"\n🌎 https://PageZero.app" 
+        + "\n \n "
+        + "Think you can beat me?";;
         navigator.clipboard.writeText(shareText).then(() => {
             alert("Copied to clipboard!");
         });
