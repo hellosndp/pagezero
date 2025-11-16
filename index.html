@@ -156,29 +156,21 @@
     }
 
     async function startLogin() {
-  const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
-  // 1) If already logged into PageZero (Supabase session), just go to dashboard
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session && session.user) {
-    window.location.href = dashboardUrl;
-    return;
-  }
-
-  // 2) Not logged into PageZero → go through Google OAuth
-  //    `prompt: 'select_account'` forces the account chooser,
-  //    even if the user is already signed into Google in the browser.
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: dashboardUrl,
-      queryParams: {
-        prompt: 'select_account'
-      }
+      // Always go through Google OAuth when user clicks Sign in / Join
+      // `prompt: 'select_account'` forces the account chooser even if
+      // they're already logged into Google.
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: dashboardUrl,
+          queryParams: {
+            prompt: 'select_account'
+          }
+        }
+      });
     }
-  });
-}
-
 
     document.addEventListener("DOMContentLoaded", async () => {
       // Always show landing page
