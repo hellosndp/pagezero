@@ -119,12 +119,6 @@
     const participantCountEl = document.getElementById("participantCount");
     const authArea = document.getElementById("auth-area");
 
-    function fmt(n){
-      if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
-      if (n >= 1_000) return (n/1_000).toFixed(1)+'k';
-      return String(n);
-    }
-
     // Placeholder count logic – replace with real endpoint / RPC later if you want
     async function loadParticipantCount() {
       try {
@@ -158,9 +152,15 @@
     async function startLogin() {
       const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
-      // Always go through Google OAuth when user clicks Sign in / Join
-      // `prompt: 'select_account'` forces the account chooser even if
-      // they're already logged into Google.
+      // If already logged into PageZero (Supabase session), go straight to dashboard
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        window.location.href = dashboardUrl;
+        return;
+      }
+
+      // Not logged into PageZero → start Google OAuth.
+      // prompt: 'select_account' makes Google show the account chooser instead of silently picking one.
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -176,7 +176,7 @@
       // Always show landing page
       await loadParticipantCount();
 
-      // If already logged in, just show their avatar/name in header
+      // If already logged in, just show their avatar/name in header (no redirect)
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
