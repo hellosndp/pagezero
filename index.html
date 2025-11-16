@@ -119,25 +119,31 @@
     const participantCountEl = document.getElementById("participantCount");
     const authArea = document.getElementById("auth-area");
 
-    // Load real registered users count from public.users
+    // Load registered user count
     async function loadParticipantCount() {
-      try {
-        const { count, error } = await supabase
-          .from("users")
-          .select("id", { count: "exact", head: true });
+      const { count, error } = await supabase
+        .from("users")
+        .select("id", { count: "exact", head: true });
 
-        if (error) {
-          console.warn("Could not load participant count", error);
-          participantCountEl.textContent = "—";
-          return;
-        }
-
-        const value = typeof count === "number" ? count : 0;
-        participantCountEl.textContent = value.toLocaleString("en-IN");
-      } catch (e) {
-        console.warn("Could not load count, fallback", e);
+      if (error) {
+        console.warn("Could not load participant count", error);
         participantCountEl.textContent = "—";
+        return;
       }
+
+      const value = typeof count === "number" ? count : 0;
+      participantCountEl.textContent = value.toLocaleString("en-IN");
+    }
+
+    // Live update count on new registrations
+    function subscribeToNewUsers() {
+      supabase
+        .channel("public:users")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: "users" }, (payload) => {
+          console.log("New user registered!", payload);
+          loadParticipantCount(); // reload the count
+        })
+        .subscribe();
     }
 
     function renderSignedInHeader(user) {
@@ -163,14 +169,12 @@
     async function startLogin() {
       const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
-      // If already logged into PageZero (Supabase session), go straight to dashboard
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         window.location.href = dashboardUrl;
         return;
       }
 
-      // Not logged into PageZero → start Google OAuth.
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -185,31 +189,25 @@
     document.addEventListener("DOMContentLoaded", async () => {
       const dashboardUrl = "https://pagezero.app/dashboard.html";
 
-      // 1) Detect "just came back from OAuth" on this page
       const isOAuthCallback =
         window.location.hash &&
         /access_token|refresh_token/.test(window.location.hash);
 
       if (isOAuthCallback) {
-        // Clean URL (remove the token hash) for aesthetics
         try {
           history.replaceState({}, document.title, window.location.pathname);
-        } catch (_) { /* ignore */ }
+        } catch (_) {}
 
-        // After Supabase processes the callback, session should exist.
         const { data: { session } } = await supabase.auth.getSession();
         if (session && session.user) {
-          // This was a login/return → send them to dashboard.
           window.location.href = dashboardUrl;
           return;
         }
-        // If somehow no session, fall through to normal landing.
       }
 
-      // 2) Normal landing behavior
       await loadParticipantCount();
+      subscribeToNewUsers(); // 🔥 start live syncing
 
-      // If already logged in (existing session), just show avatar/name in header
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
