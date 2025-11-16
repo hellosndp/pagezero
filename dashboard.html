@@ -954,13 +954,48 @@ saveTodayBtn.onclick = async () => {
     shareBtn.addEventListener('click', exportCopyDownload)
 
     // boot
-    document.addEventListener('DOMContentLoaded', async () => {
-  // AUTH GUARD: if no Supabase session, send them to index (home)
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session || !session.user) {
-    window.location.href = 'index.html';  // or '/' if that works on your hosting
-    return;
+    async function ensureAuthenticatedOrRedirect() {
+  const indexUrl = new URL('index.html', window.location.href).toString();
+
+  // 1) Try to get session immediately
+  let { data: { session } } = await supabase.auth.getSession();
+  if (session && session.user) {
+    return true; // already logged in
   }
+
+  // 2) If there's an OAuth hash in the URL, Supabase may need a moment to hydrate
+  const hasAuthHash =
+    window.location.hash &&
+    /access_token|refresh_token/.test(window.location.hash);
+
+  if (hasAuthHash) {
+    // Give Supabase a few short chances to pick up the session
+    for (let i = 0; i < 5; i++) {
+      await new Promise(res => setTimeout(res, 200)); // 200ms * 5 = 1s max
+      const res2 = await supabase.auth.getSession();
+      session = res2.data.session;
+      if (session && session.user) break;
+    }
+
+    // Clean up the URL (remove the auth hash fragment)
+    try {
+      history.replaceState({}, document.title, window.location.pathname);
+    } catch (_) { /* ignore */ }
+  }
+
+  // 3) Final check
+  if (!session || !session.user) {
+    // Still no session → treat as unauthenticated, send to home
+    window.location.href = indexUrl;
+    return false;
+  }
+
+  return true;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const ok = await ensureAuthenticatedOrRedirect();
+  if (!ok) return;
 
   await initProfileArea();
   setActiveFilter(currentMode);
@@ -970,6 +1005,7 @@ saveTodayBtn.onclick = async () => {
     if (chartInstance) chartInstance.update();
   });
 });
+
 
   </script>
 </body>
