@@ -812,143 +812,209 @@ CURRENT_USER_ROW_ID = userRow.id;
     btnWeek.addEventListener('click', ()=> { setActiveFilter('week'); loadDataAndRender('week') })
     btnJourney.addEventListener('click', ()=> { setActiveFilter('journey'); loadDataAndRender('journey') })
 
-    async function fetchImageAsDataUrl(url) {
-      if (!url) return null
-      try {
-        const resp = await fetch(url, { mode: 'cors' })
-        if (!resp.ok) throw new Error('fetch failed')
-        const blob = await resp.blob()
-        return await new Promise((resolve, reject) => {
-          const fr = new FileReader()
-          fr.onload = () => resolve(fr.result)
-          fr.onerror = () => reject(new Error('FileReader failed'))
-          fr.readAsDataURL(blob)
-        })
-      } catch (err) {
-        console.warn('fetchImageAsDataUrl failed for', url, err)
-        return null
+    // ---------- SHARE / EXPORT (copy chart as image) ----------
+
+async function fetchImageAsDataUrl(url) {
+  if (!url) return null;
+  try {
+    const resp = await fetch(url, { mode: "cors" });
+    if (!resp.ok) throw new Error("fetch failed");
+    const blob = await resp.blob();
+    return await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result);
+      fr.onerror = () => reject(new Error("FileReader failed"));
+      fr.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn("fetchImageAsDataUrl failed for", url, err);
+    return null;
+  }
+}
+
+function drawAvatarPlaceholder(ctx, x, y, size) {
+  ctx.save();
+  const cx = x + size / 2;
+  const cy = y + size / 2;
+  const r = size / 2;
+
+  // Circle background
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(31,41,51,0.08)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(31,41,51,0.06)";
+  ctx.stroke();
+
+  // Initials from headerName
+  const name = (headerName.textContent || "").trim();
+  let initials = "";
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    initials = (parts[0]?.[0] || "") + (parts[1]?.[0] || "");
+    initials = initials.toUpperCase().slice(0, 2);
+  }
+
+  if (initials) {
+    ctx.fillStyle = "rgba(31,41,51,0.8)";
+    ctx.font = `${Math.round(size * 0.4)}px Inconsolata, monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(initials, cx, cy);
+  }
+
+  ctx.restore();
+}
+
+// Build a shareable image: avatar + name + chart + pagezero.app
+async function buildShareCanvasFromChart() {
+  if (!chartInstance) {
+    alert("Chart is not ready yet.");
+    return null;
+  }
+
+  // Export the chart as an image first
+  const chartUrl = chartInstance.toBase64Image();
+  const chartImg = new Image();
+  chartImg.src = chartUrl;
+
+  // Prepare avatar (optional)
+  const avatarSrc = headerAvatar?.src || "";
+  const avatarDataUrl = avatarSrc ? await fetchImageAsDataUrl(avatarSrc) : null;
+  const avatarImg = new Image();
+  if (avatarDataUrl) avatarImg.src = avatarDataUrl;
+
+  // Wait for chart image to load
+  await new Promise((res) => {
+    chartImg.onload = res;
+    chartImg.onerror = res;
+  });
+
+  // Base sizing
+  const padding = 32;
+  const headerH = 80;
+  const footerH = 40;
+  const targetWidth = 1000; // final image width
+
+  const chartOriginalW = chartImg.width || 800;
+  const chartOriginalH = chartImg.height || 400;
+  const chartWidth = targetWidth - padding * 2;
+  const scale = chartWidth / chartOriginalW;
+  const chartHeight = Math.round(chartOriginalH * scale);
+
+  const canvasHeight = padding + headerH + chartHeight + footerH + padding;
+  const canvas = document.createElement("canvas");
+  canvas.width = targetWidth;
+  canvas.height = canvasHeight;
+
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Header: avatar + name + subtitle
+  const avatarSize = 56;
+  const avatarX = padding;
+  const avatarY = padding + (headerH - avatarSize) / 2;
+
+  if (avatarDataUrl) {
+    try {
+      await new Promise((res) => {
+        avatarImg.onload = res;
+        avatarImg.onerror = res;
+      });
+
+      ctx.save();
+      const cx = avatarX + avatarSize / 2;
+      const cy = avatarY + avatarSize / 2;
+      const r = avatarSize / 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+    } catch (e) {
+      console.warn("Failed to draw avatar; using placeholder", e);
+      drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarSize);
+    }
+  } else {
+    drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarSize);
+  }
+
+  const nameText = headerName?.textContent || "";
+  ctx.fillStyle = "rgba(31,41,51,0.95)";
+  ctx.font = "20px Inconsolata, monospace";
+  ctx.textBaseline = "top";
+  ctx.textAlign = "left";
+  ctx.fillText(nameText, padding + avatarSize + 14, padding + 8);
+
+  ctx.font = "13px Inconsolata, monospace";
+  ctx.fillStyle = "rgba(31,41,51,0.6)";
+  ctx.fillText("pagezero.app — NaNoWriMo 2025", padding + avatarSize + 14, padding + 8 + 26);
+
+  // Draw chart
+  const chartX = padding;
+  const chartY = padding + headerH;
+  ctx.drawImage(chartImg, chartX, chartY, chartWidth, chartHeight);
+
+  // Footer
+  const footerText = "pagezero.app";
+  ctx.font = "13px Inconsolata, monospace";
+  ctx.fillStyle = "rgba(31,41,51,0.6)";
+  const tw = ctx.measureText(footerText).width;
+  ctx.textAlign = "center";
+  ctx.fillText(footerText, canvas.width / 2, chartY + chartHeight + 20);
+
+  return canvas;
+}
+
+async function copyShareImageToClipboard() {
+  try {
+    const canvas = await buildShareCanvasFromChart();
+    if (!canvas) return;
+
+    const supportsClipboard =
+      !!navigator.clipboard &&
+      typeof navigator.clipboard.write === "function" &&
+      typeof window.ClipboardItem === "function";
+
+    if (supportsClipboard) {
+      const blob = await new Promise((resolve) =>
+        canvas.toBlob(resolve, "image/png")
+      );
+      if (!blob) {
+        throw new Error("Failed to create blob from canvas");
       }
+
+      const item = new ClipboardItem({ "image/png": blob });
+      await navigator.clipboard.write([item]);
+      alert("Chart image copied to clipboard ✅");
+      return;
     }
 
-    function drawAvatarPlaceholder(ctx, x, y, size) {
-      ctx.save()
-      const cx = x + size / 2, cy = y + size / 2, r = size / 2
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath()
-      ctx.fillStyle = 'rgba(31,41,51,0.08)'; ctx.fill()
-      ctx.strokeStyle = 'rgba(31,41,51,0.06)'; ctx.stroke()
-      const name = (headerName.textContent || '').trim()
-      let initials = ''
-      if (name) {
-        const parts = name.split(/\s+/).filter(Boolean)
-        initials = (parts[0]?.[0] || '') + (parts[1]?.[0] || '')
-        initials = initials.toUpperCase().slice(0,2)
-      }
-      if (initials) {
-        ctx.fillStyle = 'rgba(31,41,51,0.7)'
-        ctx.font = `${Math.round(size * 0.4)}px Inconsolata, monospace`
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-        ctx.fillText(initials, cx, cy)
-      }
-      ctx.restore()
-    }
+    // Fallback: open in new tab for manual save
+    const url = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "pagezero-chart.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch (err) {
+    console.error("Failed to copy chart image", err);
+    alert("Could not copy the chart image. Check browser permissions and try again.");
+  }
+}
 
-    async function buildExportCanvasFromChart() {
-      if (!chartInstance) {
-        alert('Chart not ready to export.')
-        return null
-      }
+// Hook up Share button
+shareBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  copyShareImageToClipboard();
+});
 
-      const chartUrl = chartInstance.toBase64Image()
-      const chartImg = new Image()
-      chartImg.src = chartUrl
-
-      const avatarSrc = headerAvatar.src || ''
-      const avatarDataUrl = await fetchImageAsDataUrl(avatarSrc)
-      const avatarImg = new Image()
-      if (avatarDataUrl) avatarImg.src = avatarDataUrl
-
-      await new Promise(res => { chartImg.onload = res; chartImg.onerror = res })
-
-      const padding = 24
-      const headerH = 64
-      const chartW = Math.max(900, chartImg.width || 900)
-      const chartScaledH = Math.round((chartImg.height || 400) * (chartW / (chartImg.width || chartW)))
-      const footerH = 44
-      const canvasH = headerH + chartScaledH + footerH + padding * 2
-
-      const c = document.createElement('canvas'); c.width = chartW; c.height = canvasH
-      const ctx = c.getContext('2d')
-      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, c.width, c.height)
-
-      const avatarSize = 48
-      const avatarX = padding
-      const avatarY = padding + (headerH - avatarSize) / 2
-
-      if (avatarDataUrl) {
-        try {
-          await new Promise(res => { avatarImg.onload = res; avatarImg.onerror = res })
-          ctx.save()
-          const cx = avatarX + avatarSize / 2, cy = avatarY + avatarSize / 2, r = avatarSize / 2
-          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.closePath(); ctx.clip()
-          ctx.drawImage(avatarImg, avatarX, avatarY, avatarSize, avatarSize)
-          ctx.restore()
-        } catch (e) {
-          console.warn('Failed to draw avatar image on canvas', e)
-          drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarSize)
-        }
-      } else {
-        drawAvatarPlaceholder(ctx, avatarX, avatarY, avatarSize)
-      }
-
-      ctx.fillStyle = 'rgba(31,41,51,0.95)'
-      ctx.font = '18px Inconsolata, monospace'
-      ctx.textBaseline = 'top'
-      ctx.fillText(headerName.textContent || '', padding + avatarSize + 12, padding + 8)
-
-      ctx.font = '12px Inconsolata, monospace'
-      ctx.fillStyle = 'rgba(31,41,51,0.6)'
-      ctx.textContent = 'pagezero.app'
-      ctx.fillText('pagezero.app', padding + avatarSize + 12, padding + 8 + 22)
-
-      ctx.drawImage(chartImg, padding, padding + headerH, chartW - padding * 2, chartScaledH)
-
-      ctx.font = '12px Inconsolata, monospace'
-      ctx.fillStyle = 'rgba(31,41,51,0.6)'
-      const footerText = 'pagezero.app'
-      const tw = ctx.measureText(footerText).width
-      ctx.fillText(footerText, (chartW - tw) / 2, padding + headerH + chartScaledH + 12)
-
-      return c
-    }
-
-    async function exportCopyDownload() {
-      const canvas = await buildExportCanvasFromChart()
-      if (!canvas) return
-
-      const supportsClipboardWrite = !!(navigator.clipboard && navigator.clipboard.write && window.ClipboardItem)
-      if (supportsClipboardWrite) {
-        try {
-          const blob = await new Promise(res => canvas.toBlob(res, 'image/png'))
-          const item = new ClipboardItem({ 'image/png': blob })
-          await navigator.clipboard.write([item])
-          alert('Chart image copied to clipboard.')
-          return
-        } catch (err) {
-          console.warn('clipboard image write failed:', err)
-        }
-      }
-
-      try {
-        const url = canvas.toDataURL('image/png')
-        const a = document.createElement('a'); a.href = url; a.download = 'pagezero-chart.png'
-        document.body.appendChild(a); a.click(); a.remove()
-      } catch (err) {
-        console.error('download fallback failed', err)
-        alert('Could not copy or download the chart.')
-      }
-    }
-
-    shareBtn.addEventListener('click', exportCopyDownload)
 
     // --- AUTH GUARD + BOOT ---
 // --- AUTH GUARD + BOOT ---
