@@ -1005,10 +1005,12 @@ async function ensureAuthenticatedOrRedirect() {
 
 
    document.addEventListener('DOMContentLoaded', async () => {
-  const session = await ensureAuthenticatedOrRedirect();
-  // We don't early-return here; initProfileArea knows how to handle "no session"
+  console.log("Dashboard loaded at", window.location.href);
 
+  // Just try to init profile + charts.
+  // initProfileArea already handles "no session" by showing Sign in.
   await initProfileArea();
+
   setActiveFilter(currentMode);
   await loadDataAndRender(currentMode);
 
@@ -1016,6 +1018,7 @@ async function ensureAuthenticatedOrRedirect() {
     if (chartInstance) chartInstance.update();
   });
 });
+
 
 
   </script>
