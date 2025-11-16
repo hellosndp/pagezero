@@ -162,12 +162,18 @@
   // Create a dashboard URL relative to the current page (respects subfolders)
   const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
+  async function startLogin() {
+  // Always build dashboard URL relative to current page
+  const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+
   await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: dashboardUrl
     }
   });
+}
+
 }
 
 
