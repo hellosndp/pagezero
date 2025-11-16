@@ -225,6 +225,7 @@
 
     // constants/colors
     let TARGET_WORDS = 1667
+    let CURRENT_USER_ROW_ID = null;
     const COLOR_ZERO = '#ffffff'
     const COLOR_NORMAL = 'rgba(31,41,51,0.92)'
     const COLOR_OVER = '#16a34a'
@@ -466,14 +467,25 @@
     }
 
     async function fetchDailyCountsBetween(startISO, endISO) {
-      const { data, error } = await supabase
-        .from('daily_wordcounts')
-        .select('day, words, time_spent_minutes')
-        .gte('day', startISO)
-        .lte('day', endISO)
-      if (error) { console.warn('fetchDailyCountsBetween error', error); return [] }
-      return data
-    }
+  if (!CURRENT_USER_ROW_ID) {
+    console.warn('No CURRENT_USER_ROW_ID yet, returning empty data');
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('daily_wordcounts')
+    .select('day, words, time_spent_minutes')
+    .eq('user_id', CURRENT_USER_ROW_ID)      // 🔑 filter by current user
+    .gte('day', startISO)
+    .lte('day', endISO);
+
+  if (error) {
+    console.warn('fetchDailyCountsBetween error', error);
+    return [];
+  }
+  return data || [];
+}
+
 
     function dummyDailyValues(length) {
       const base = 1200
@@ -666,6 +678,9 @@
         headerAvatar.src = 'https://placehold.co/200x200?text=U'
         return
       }
+      
+// 🔽 add this
+CURRENT_USER_ROW_ID = userRow.id;
 
       try {
         const { data: userSettings, error: settingsErr } = await supabase
