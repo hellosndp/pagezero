@@ -150,7 +150,7 @@
     }
 
     async function startLogin() {
-      const dashboardUrl = new URL('profile.html', window.location.href).toString();
+      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
       // If already logged into PageZero (Supabase session), go straight to dashboard
       const { data: { session } } = await supabase.auth.getSession();
