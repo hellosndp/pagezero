@@ -128,9 +128,6 @@
     // Placeholder count logic – replace with real endpoint / RPC later if you want
     async function loadParticipantCount() {
       try {
-        // Example: if you later track users or sessions in Supabase,
-        // you can replace this with a RPC or table count.
-        // For now: static-ish fallback to look alive.
         participantCountEl.textContent = '1,234';
       } catch (e) {
         console.warn("Could not load count, using fallback", e);
@@ -159,36 +156,33 @@
     }
 
     async function startLogin() {
-  // Create a dashboard URL relative to the current page (respects subfolders)
-  const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
-  async function startLogin() {
-  // Always build dashboard URL relative to current page
-  const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
-
-  await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: dashboardUrl
-    }
-  });
-}
-
-}
-
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      // If already logged in, go straight to dashboard
+      // If already logged in, just go to dashboard
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
-        // Optional: show header avatar while redirecting
-        renderSignedInHeader(session.user);
-        window.location.href = 'dashboard.html';
+        window.location.href = dashboardUrl;
         return;
       }
 
-      // Not logged in: normal landing page
+      // Not logged in → start Google OAuth
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: dashboardUrl
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // Always show landing page
       await loadParticipantCount();
+
+      // If already logged in, just show their avatar/name in header
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        renderSignedInHeader(session.user);
+      }
 
       signinBtn.addEventListener("click", (e) => {
         e.preventDefault();
