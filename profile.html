@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PageZero · Profile</title>
+
+  <!-- Inconsolata -->
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { mono: ['Inconsolata', 'ui-monospace', 'SFMono-Regular'] },
+          colors: {
+            pz: {
+              dark: '#1F2933',
+              light: '#ffffff',
+              border: 'rgba(31,41,51,0.06)',
+              red: '#DC2626'
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-pz-light text-pz-dark font-mono p-6">
+  <div class="max-w-lg mx-auto flex flex-col min-h-[calc(100vh-48px)]">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="window.location.href='dashboard.html'">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <rect x="2" y="3" width="20" height="18" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+          <path d="M7 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="text-lg font-semibold">PageZero</div>
+          <div class="text-xs text-gray-500">Profile</div>
+        </div>
+      </div>
+      <button class="px-3 py-1.5 text-sm rounded border border-pz-border hover:bg-gray-50" onclick="window.location.href='dashboard.html'">
+        ← Dashboard
+      </button>
+    </header>
+
+    <!-- Card -->
+    <main class="flex-1">
+      <section class="bg-white border border-pz-border rounded-xl p-5 mb-6">
+        
+        <!-- Avatar -->
+        <div class="flex items-center gap-4 mb-6">
+          <img id="profileAvatarPreview"
+            src="https://placehold.co/160x160?text=U"
+            class="w-20 h-20 rounded-full border border-pz-border object-cover"
+          />
+          <div>
+            <label for="avatarFile" class="text-xs text-gray-500 block mb-1">Profile picture(for Public display)</label>
+            <input type="file" id="avatarFile" accept="image/*" class="text-xs" />
+            <p class="text-xs text-gray-500 mt-1">Max size: 1MB</p>
+            <p id="avatarError" class="text-xs text-pz-red mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <!-- Fields -->
+        <div class="space-y-5">
+          <!-- Display name -->
+          <div>
+            <label for="displayName" class="text-xs text-gray-500 block mb-1">Display name(for Public display)</label>
+            <input id="displayName" class="w-full border border-pz-border p-2 rounded text-sm focus:ring focus:ring-gray-200" type="text" placeholder="Your name" />
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="emailField" class="text-xs text-gray-500 block mb-1">Email</label>
+            <input id="emailField" class="w-full bg-gray-100 border border-pz-border p-2 rounded text-sm text-gray-500 cursor-not-allowed" type="email" value="you@example.com" disabled />
+          </div>
+
+          <!-- Daily target -->
+          <div>
+            <label for="dailyTarget" class="text-xs text-gray-500 block mb-1">Daily target (words)</label>
+            <input
+              id="dailyTarget"
+              class="w-full border border-pz-border p-2 text-sm focus:ring focus:ring-gray-200"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 1667"
+            />
+          </div>
+        </div>
+
+        <!-- Save -->
+        <div class="flex justify-end mt-6">
+          <button id="saveProfileBtn"
+            class="px-4 py-2 rounded border border-pz-dark bg-pz-dark text-white text-sm hover:bg-gray-800"
+          >
+            Save changes
+          </button>
+        </div>
+
+        <p id="profileMsg" class="text-xs mt-2 text-gray-500"></p>
+      </section>
+
+      <!-- Logout -->
+      <button id="logoutBtn"
+        class="w-full py-2 border border-pz-red text-pz-red rounded hover:bg-red-50 text-sm mt-4"
+      >
+        Log out
+      </button>
+
+      <footer class="text-xs text-gray-500 text-center mt-6">
+        Built for PageZero — minimal, clean.
+      </footer>
+    </main>
+  </div>
+
+  <!-- FE Logic -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  
+    const SUPABASE_URL = 'https://fagmvslaoyiqonyphbsh.supabase.co'
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZ212c2xhb3lpcW9ueXBoYnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjQ2NDAsImV4cCI6MjA3ODgwMDY0MH0.5abTldTV0IoeVqQ8RzaJjFM1z25coWxPbKhqhPJPsUI'
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  
+    const AVATAR_BUCKET = 'avatars'
+    const MAX_SIZE = 1 * 1024 * 1024 // 1MB
+  
+    // DOM refs
+    const avatarInput   = document.getElementById('avatarFile')
+    const avatarPreview = document.getElementById('profileAvatarPreview')
+    const avatarError   = document.getElementById('avatarError')
+    const displayNameEl = document.getElementById('displayName')
+    const emailFieldEl  = document.getElementById('emailField')
+    const dailyTargetEl = document.getElementById('dailyTarget')
+    const saveBtn       = document.getElementById('saveProfileBtn')
+    const profileMsg    = document.getElementById('profileMsg')
+    const logoutBtn     = document.getElementById('logoutBtn')
+  
+    let currentUser = null
+    let pendingAvatarFile = null
+  
+    function clearAvatarError() {
+      avatarError.textContent = ''
+      avatarError.classList.add('hidden')
+    }
+  
+    function showAvatarError(msg) {
+      avatarError.textContent = msg
+      avatarError.classList.remove('hidden')
+    }
+  
+    function setSaveState(state, msg = '') {
+      if (!saveBtn) return
+      if (state === 'saving') {
+        saveBtn.disabled = true
+        saveBtn.textContent = 'Saving…'
+        profileMsg.textContent = ''
+        profileMsg.classList.remove('text-red-500')
+      } else if (state === 'saved') {
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Save changes'
+        profileMsg.textContent = 'Saved ✓'
+        profileMsg.classList.remove('text-red-500')
+        setTimeout(() => { profileMsg.textContent = '' }, 2000)
+      } else if (state === 'error') {
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Save changes'
+        profileMsg.textContent = msg || 'Something went wrong'
+        profileMsg.classList.add('text-red-500')
+      } else {
+        saveBtn.disabled = false
+        saveBtn.textContent = 'Save changes'
+        profileMsg.textContent = ''
+        profileMsg.classList.remove('text-red-500')
+      }
+    }
+  
+    // -------- loadProfile: fetch session + user row + populate UI ----------
+    async function loadProfile() {
+      const { data: { session }, error: sessErr } = await supabase.auth.getSession()
+      if (sessErr) {
+        console.error('session error', sessErr)
+        setSaveState('error', 'Could not load session')
+        return
+      }
+  
+      // Not logged in -> go back to dashboard
+      if (!session || !session.user) {
+        window.location.href = 'dashboard.html'
+        return
+      }
+  
+      const authUser = session.user
+  
+      const { data: userRow, error: userErr } = await supabase
+        .from('users')
+        .select('id, email, display_name, avatar_url, daily_target_words')
+        .eq('auth_user_id', authUser.id)
+        .single()
+  
+      if (userErr) {
+        console.error('user fetch error', userErr)
+        setSaveState('error', 'Could not load profile')
+        return
+      }
+  
+      currentUser = userRow
+  
+      emailFieldEl.value = userRow.email || authUser.email || ''
+      displayNameEl.value = userRow.display_name || ''
+      dailyTargetEl.value = userRow.daily_target_words != null ? userRow.daily_target_words : ''
+  
+      if (userRow.avatar_url) {
+        avatarPreview.src = userRow.avatar_url
+      }
+    }
+  
+    // ---------- avatar preview & validation ----------
+    avatarInput.addEventListener('change', (e) => {
+      clearAvatarError()
+      const file = e.target.files && e.target.files[0]
+      if (!file) {
+        pendingAvatarFile = null
+        return
+      }
+  
+      if (file.size > MAX_SIZE) {
+        showAvatarError('File too large. Max 1MB.')
+        avatarInput.value = ''
+        pendingAvatarFile = null
+        return
+      }
+  
+      pendingAvatarFile = file
+  
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        avatarPreview.src = ev.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  
+    // ---------- save profile (name, target, avatar) ----------
+    async function handleSave() {
+      if (!currentUser) {
+        setSaveState('error', 'Profile not loaded yet')
+        return
+      }
+  
+      setSaveState('saving')
+  
+      const newDisplayName = (displayNameEl.value || '').trim()
+      let newDailyTarget = dailyTargetEl.value ? parseInt(dailyTargetEl.value, 10) : null
+      if (newDailyTarget != null && (isNaN(newDailyTarget) || newDailyTarget < 0)) {
+        setSaveState('error', 'Daily target must be a non-negative number')
+        return
+      }
+  
+      let avatarUrl = currentUser.avatar_url || null
+  
+      // Upload avatar if a new file is chosen
+      if (pendingAvatarFile) {
+        try {
+          const fileExt = pendingAvatarFile.name.includes('.')
+            ? pendingAvatarFile.name.split('.').pop()
+            : 'jpg'
+  
+          const filePath = `user-${currentUser.id}-${Date.now()}.${fileExt}`
+  
+          const { error: uploadErr } = await supabase
+            .storage
+            .from(AVATAR_BUCKET)
+            .upload(filePath, pendingAvatarFile, { upsert: true })
+  
+          if (uploadErr) {
+            console.error('avatar upload error:', uploadErr)
+            setSaveState('error', 'Failed to upload avatar')
+            return
+          }
+  
+          const { data: publicData, error: publicErr } = supabase
+            .storage
+            .from(AVATAR_BUCKET)
+            .getPublicUrl(filePath)
+  
+          if (publicErr) {
+            console.error('getPublicUrl error:', publicErr)
+            setSaveState('error', 'Could not get avatar URL')
+            return
+          }
+  
+          avatarUrl = publicData?.publicUrl || avatarUrl
+        } catch (err) {
+          console.error('avatar upload exception:', err)
+          setSaveState('error', 'Failed to upload avatar')
+          return
+        }
+      }
+  
+      const updatePayload = {
+        display_name: newDisplayName || null,
+        avatar_url: avatarUrl,
+        daily_target_words: newDailyTarget,
+        updated_at: new Date().toISOString()
+      }
+  
+      const { error: updateErr } = await supabase
+        .from('users')
+        .update(updatePayload)
+        .eq('id', currentUser.id)
+  
+      if (updateErr) {
+        console.error('profile update error', updateErr)
+        setSaveState('error', 'Could not save profile')
+        return
+      }
+  
+      currentUser = { ...currentUser, ...updatePayload }
+      pendingAvatarFile = null
+      setSaveState('saved')
+    }
+  
+    saveBtn.addEventListener('click', handleSave)
+  
+    // ---------- logout ----------
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut()
+      window.location.href = 'dashboard.html'
+    })
+  
+    // boot
+    document.addEventListener('DOMContentLoaded', () => {
+      setSaveState('idle')
+      loadProfile()
+    })
+  </script>
+  
+  
+</body>
+</html>

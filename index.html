@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PageZero · NaNoWriMo 2025</title>
+
+  <!-- Inconsolata from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            mono: ['Inconsolata', 'ui-monospace', 'SFMono-Regular'],
+          },
+          colors: {
+            pz: {
+              dark: '#1F2933',
+              light: '#ffffff',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root{
+      --pz-dark: #1F2933;
+      --pz-light: #ffffff;
+    }
+    html,body{height:100%;}
+    body{
+      background: var(--pz-light);
+      color: var(--pz-dark);
+      font-family: Inconsolata, monospace;
+    }
+    .accent-line{background:var(--pz-dark);}
+    :focus{outline:2px dashed var(--pz-dark); outline-offset:4px}
+    .big-number{
+      letter-spacing: -0.02em;
+      line-height: 0.9;
+    }
+    @media (max-width:640px){
+      .logo-text{font-size:1rem}
+      .big-number{font-size:5.5rem}
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 font-mono">
+  <main class="w-full max-w-2xl">
+    <!-- Top bar -->
+    <header class="flex items-center justify-between mb-12">
+      <div class="flex items-center gap-3">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+          <rect x="2" y="3" width="20" height="18" rx="3" stroke="var(--pz-dark)" stroke-width="1.5" fill="none"/>
+          <path d="M7 8h10" stroke="var(--pz-dark)" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="9" cy="15" r="0.8" fill="var(--pz-dark)" />
+        </svg>
+        <span class="logo-text text-pz-dark font-semibold text-lg">PageZero</span>
+      </div>
+
+      <div id="auth-area" class="flex items-center gap-3">
+        <button
+          id="signinBtn"
+          class="px-4 py-2 rounded-md border border-pz-dark text-sm font-medium bg-white hover:bg-gray-50"
+        >
+          Sign in
+        </button>
+      </div>
+    </header>
+
+    <!-- Center card -->
+    <section class="bg-white border border-[rgba(31,41,51,0.06)] p-10 rounded-2xl shadow-sm">
+      <div class="flex flex-col items-center text-center gap-6">
+        <div class="w-full">
+          <div class="text-sm uppercase tracking-widest text-pz-dark/80">NaNoWriMo · 2025</div>
+        </div>
+
+        <h1
+          id="participantCount"
+          class="big-number font-extrabold text-[8rem] sm:text-[9rem] text-pz-dark"
+        >
+          —
+        </h1>
+
+        <p class="max-w-xl text-pz-dark/80">
+          2025 participants count. Be the next person to add your daily words.
+        </p>
+
+        <div class="flex items-center justify-center mt-2">
+          <button
+            id="joinNow"
+            class="px-6 py-3 rounded-full text-sm border border-pz-dark font-semibold bg-white hover:bg-gray-50"
+          >
+            Join / Log daily words
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Supabase Auth + UI wiring -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+
+    const SUPABASE_URL = "https://fagmvslaoyiqonyphbsh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZ212c2xhb3lpcW9ueXBoYnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjQ2NDAsImV4cCI6MjA3ODgwMDY0MH0.5abTldTV0IoeVqQ8RzaJjFM1z25coWxPbKhqhPJPsUI";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const signinBtn = document.getElementById("signinBtn");
+    const joinNowBtn = document.getElementById("joinNow");
+    const participantCountEl = document.getElementById("participantCount");
+    const authArea = document.getElementById("auth-area");
+
+    function fmt(n){
+      if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
+      if (n >= 1_000) return (n/1_000).toFixed(1)+'k';
+      return String(n);
+    }
+
+    // Placeholder count logic – replace with real endpoint / RPC later if you want
+    async function loadParticipantCount() {
+      try {
+        // Example: if you later track users or sessions in Supabase,
+        // you can replace this with a RPC or table count.
+        // For now: static-ish fallback to look alive.
+        participantCountEl.textContent = '1,234';
+      } catch (e) {
+        console.warn("Could not load count, using fallback", e);
+        participantCountEl.textContent = '1,234';
+      }
+    }
+
+    function renderSignedInHeader(user) {
+      authArea.innerHTML = "";
+
+      const wrap = document.createElement("div");
+      wrap.className = "flex items-center gap-3";
+
+      const img = document.createElement("img");
+      img.src = user.user_metadata?.avatar_url || user.user_metadata?.picture || "";
+      img.alt = user.user_metadata?.full_name || user.email || "avatar";
+      img.className = "w-8 h-8 rounded-full border border-[rgba(31,41,51,0.1)] object-cover";
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "text-sm font-medium";
+      nameDiv.textContent = user.user_metadata?.full_name || user.email || "You";
+
+      wrap.appendChild(img);
+      wrap.appendChild(nameDiv);
+      authArea.appendChild(wrap);
+    }
+
+    async function startLogin() {
+  // Create a dashboard URL relative to the current page (respects subfolders)
+  const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: dashboardUrl
+    }
+  });
+}
+
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      // If already logged in, go straight to dashboard
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        // Optional: show header avatar while redirecting
+        renderSignedInHeader(session.user);
+        window.location.href = 'dashboard.html';
+        return;
+      }
+
+      // Not logged in: normal landing page
+      await loadParticipantCount();
+
+      signinBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        startLogin();
+      });
+
+      joinNowBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        startLogin();
+      });
+    });
+  </script>
+</body>
+</html>
