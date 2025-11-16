@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PageZero · Dashboard</title>
 
-  <!-- Inconsolata 1-->
+  <!-- Inconsolata -->
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- Tailwind CDN -->
@@ -217,6 +217,22 @@
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
     // -----------------------------
 
+    // ---------- DATE HELPERS (LOCAL TZ) ----------
+    function localISODate(d = new Date()) {
+      const year  = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day   = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function isoFromLocal(d) {
+      return localISODate(d);
+    }
+
+    function curDateISO() {
+      return localISODate();
+    }
+
     // constants/colors
     let TARGET_WORDS = 1667
     const COLOR_ZERO = '#ffffff'
@@ -274,7 +290,8 @@
     let currentMode = 'november' // 'november' | 'week' | 'journey'
 
     function fmtExact(n){ return String(Number(n)) }
-    function curDateISO(){ return new Date().toISOString().slice(0,10) }
+
+    // Set default date to *local* today
     dateField.value = curDateISO()
 
     // target line plugin
@@ -486,8 +503,8 @@
       if (mode === 'november') {
         const year = now.getFullYear();
         for (let d = 1; d <= 30; d++) {
-          const dt = new Date(year, 10, d);
-          const iso = dt.toISOString().slice(0, 10);
+          const dt = new Date(year, 10, d); // month 10 = November
+          const iso = isoFromLocal(dt);     // local date
           dateKeys.push(iso);
           labels.push(`Nov ${d}`);
         }
@@ -500,7 +517,7 @@
         for (let i = 0; i < 7; i++) {
           const d = new Date(sunday);
           d.setDate(sunday.getDate() + i);
-          const iso = d.toISOString().slice(0, 10);
+          const iso = isoFromLocal(d);      // local date
           dateKeys.push(iso);
           labels.push(
             new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric' }).format(d)
@@ -515,7 +532,7 @@
         for (let i = num - 1; i >= 0; i--) {
           const d = new Date(end);
           d.setDate(end.getDate() - i);
-          const iso = d.toISOString().slice(0, 10);
+          const iso = isoFromLocal(d);      // local date
           tmp.push({ iso, d });
         }
         dateKeys = tmp.map(o => o.iso);
@@ -537,7 +554,7 @@
         rows.forEach(r => {
           const dStr = typeof r.day === 'string'
             ? r.day.slice(0, 10)
-            : new Date(r.day).toISOString().slice(0, 10);
+            : localISODate(new Date(r.day)); // normalize any Date to local YYYY-MM-DD
 
           const w = Number(r.words) || 0;
           const t = Number(r.time_spent_minutes) || 0;
