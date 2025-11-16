@@ -167,24 +167,28 @@
     }
 
     async function startLogin() {
-      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+  // Always send them to /dashboard.html on the same origin
+  const dashboardUrl = `${window.location.origin}/dashboard.html`;
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session && session.user) {
-        window.location.href = dashboardUrl;
-        return;
+  // If already logged into PageZero (Supabase session), go straight to dashboard
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session && session.user) {
+    window.location.href = dashboardUrl;
+    return;
+  }
+
+  // Not logged into PageZero → start Google OAuth.
+  await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: dashboardUrl,
+      queryParams: {
+        prompt: 'select_account'
       }
-
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: dashboardUrl,
-          queryParams: {
-            prompt: 'select_account'
-          }
-        }
-      });
     }
+  });
+}
+
 
     document.addEventListener("DOMContentLoaded", async () => {
       const dashboardUrl = "https://pagezero.app/dashboard.html";
