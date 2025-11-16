@@ -936,67 +936,88 @@
     shareBtn.addEventListener('click', exportCopyDownload)
 
     // --- AUTH GUARD + BOOT ---
-// async function ensureAuthenticatedOrRedirect() {
-//   const indexUrl = new URL('index.html', window.location.href).toString();
+// --- AUTH GUARD + BOOT ---
+async function ensureAuthenticatedOrRedirect() {
+  const indexUrl = new URL('index.html', window.location.href).toString();
 
-//   const hasAuthCode =
-//     window.location.search && /[?&]code=/.test(window.location.search);
+  const hasAuthCode =
+    window.location.search && /[?&]code=/.test(window.location.search);
 
-//   const hasAuthHash =
-//     window.location.hash &&
-//     /access_token|refresh_token/.test(window.location.hash);
+  const hasAuthHash =
+    window.location.hash &&
+    /access_token|refresh_token/.test(window.location.hash);
 
-//   const hasAuthStuff = hasAuthCode || hasAuthHash;
+  const hasAuthStuff = hasAuthCode || hasAuthHash;
 
-//   async function getCurrentSession() {
-//     const { data, error } = await supabase.auth.getSession();
-//     if (error) {
-//       console.error('getSession error', error);
-//     }
-//     return data?.session || null;
-//   }
+  async function getCurrentSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('getSession error', error);
+    }
+    return data?.session || null;
+  }
 
-//   let session = await getCurrentSession();
+  let session = await getCurrentSession();
 
-//   // If we just came back from OAuth, give Supabase time to exchange the code
-//   if (!session && hasAuthStuff) {
-//     for (let i = 0; i < 10 && !session; i++) {
-//       await new Promise((res) => setTimeout(res, 200)); // total up to ~2s
-//       session = await getCurrentSession();
-//     }
-//   }
+  // ✅ If we already have a session, we're fine
+  if (session && session.user) {
+    if (hasAuthStuff) {
+      try {
+        history.replaceState({}, document.title, window.location.pathname);
+      } catch (_) {}
+    }
+    console.log('Auth guard: session present, staying on dashboard');
+    return session;
+  }
 
-//   if (!session || !session.user) {
-//     // Still nothing → treat as unauthenticated
-//     window.location.href = indexUrl;
-//     return null;
-//   }
+  // ❌ No session and no auth in URL → clearly not logged in → go to index
+  if (!hasAuthStuff) {
+    console.log('Auth guard: no session and no auth params, redirecting to index');
+    window.location.href = indexUrl;
+    return null;
+  }
 
-//   // Clean the URL of any auth query/hash now that we *do* have a session
-//   if (hasAuthStuff) {
-//     try {
-//       history.replaceState({}, document.title, window.location.pathname);
-//     } catch (_) {
-//       // ignore
-//     }
-//   }
+  // 🕒 We have OAuth params but no session yet → give Supabase time to finish
+  console.log('Auth guard: waiting for Supabase to finish exchanging auth code...');
+  for (let i = 0; i < 20 && !session; i++) {
+    await new Promise((res) => setTimeout(res, 250)); // up to ~5s
+    session = await getCurrentSession();
+    if (session && session.user) {
+      console.log('Auth guard: session became available after wait');
+      break;
+    }
+  }
 
-//   return session;
-// }
+  if (session && session.user) {
+    if (hasAuthStuff) {
+      try {
+        history.replaceState({}, document.title, window.location.pathname);
+      } catch (_) {}
+    }
+    return session;
+  }
+
+  // 🧵 Last resort: we *do* see auth params, but still no session.
+  // Do NOT redirect away, otherwise we kill the auth flow completely.
+  console.warn('Auth guard: auth params present but no session; not redirecting');
+  return null;
+}
 
 
-    document.addEventListener('DOMContentLoaded', async () => {
-      const session = await ensureAuthenticatedOrRedirect();
-      if (!session) return;
+   document.addEventListener('DOMContentLoaded', async () => {
+  const session = await ensureAuthenticatedOrRedirect();
+  // We don't early-return here; initProfileArea knows how to handle "no session"
 
-      await initProfileArea();
-      setActiveFilter(currentMode);
-      await loadDataAndRender(currentMode);
+  await initProfileArea();
+  setActiveFilter(currentMode);
+  await loadDataAndRender(currentMode);
 
-      window.addEventListener('resize', () => {
-        if (chartInstance) chartInstance.update();
-      });
-    });
+  window.addEventListener('resize', () => {
+    if (chartInstance) chartInstance.update();
+  });
+});
+
+
   </script>
 </body>
 </html>
