@@ -954,30 +954,50 @@ saveTodayBtn.onclick = async () => {
     shareBtn.addEventListener('click', exportCopyDownload)
 
     // boot
-    async function ensureAuthenticatedOrRedirect() {
+   // --- AUTH GUARD + BOOT ---
+
+async function ensureAuthenticatedOrRedirect() {
   const indexUrl = new URL('index.html', window.location.href).toString();
+  const url      = window.location.href;
 
-  // 1) Try to get session immediately
-  let { data: { session } } = await supabase.auth.getSession();
-  if (session && session.user) {
-    return true; // already logged in
-  }
+  // 0) If Supabase uses PKCE, we may get ?code=... in the URL.
+  const hasAuthCode =
+    window.location.search && /[?&]code=/.test(window.location.search);
 
-  // 2) If there's an OAuth hash in the URL, Supabase may need a moment to hydrate
   const hasAuthHash =
     window.location.hash &&
     /access_token|refresh_token/.test(window.location.hash);
 
+  // If we see an auth code in the URL, explicitly tell Supabase to exchange it.
+  if (hasAuthCode) {
+    try {
+      const { error: exchErr } = await supabase.auth.exchangeCodeForSession(url);
+      if (exchErr) {
+        console.error('exchangeCodeForSession error:', exchErr);
+      }
+    } catch (e) {
+      console.error('exchangeCodeForSession threw:', e);
+    }
+  }
+
+  // 1) Try to get session (after possible exchange)
+  let { data: { session } } = await supabase.auth.getSession();
+  if (session && session.user) {
+    // Clean URL: drop code/hash if present
+    try {
+      history.replaceState({}, document.title, window.location.pathname);
+    } catch (_) { /* ignore */ }
+    return true;
+  }
+
+  // 2) If we came here with hash tokens (implicit flow), give Supabase a chance
   if (hasAuthHash) {
-    // Give Supabase a few short chances to pick up the session
     for (let i = 0; i < 5; i++) {
-      await new Promise(res => setTimeout(res, 200)); // 200ms * 5 = 1s max
+      await new Promise(res => setTimeout(res, 200));
       const res2 = await supabase.auth.getSession();
       session = res2.data.session;
       if (session && session.user) break;
     }
-
-    // Clean up the URL (remove the auth hash fragment)
     try {
       history.replaceState({}, document.title, window.location.pathname);
     } catch (_) { /* ignore */ }
@@ -985,7 +1005,6 @@ saveTodayBtn.onclick = async () => {
 
   // 3) Final check
   if (!session || !session.user) {
-    // Still no session → treat as unauthenticated, send to home
     window.location.href = indexUrl;
     return false;
   }
@@ -1005,6 +1024,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (chartInstance) chartInstance.update();
   });
 });
+
 
 
   </script>
