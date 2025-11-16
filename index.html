@@ -101,8 +101,6 @@
             Join / Log daily words
           </button>
         </div>
-
-        <p id="authError" class="text-xs text-red-600 mt-3"></p>
       </div>
     </section>
   </main>
@@ -114,30 +112,32 @@
     const SUPABASE_URL = "https://fagmvslaoyiqonyphbsh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZ212c2xhb3lpcW9ueXBoYnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjQ2NDAsImV4cCI6MjA3ODgwMDY0MH0.5abTldTV0IoeVqQ8RzaJjFM1z25coWxPbKhqhPJPsUI";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-    });
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const signinBtn = document.getElementById("signinBtn");
     const joinNowBtn = document.getElementById("joinNow");
     const participantCountEl = document.getElementById("participantCount");
     const authArea = document.getElementById("auth-area");
-    const authErrorEl = document.getElementById("authError");
 
-    function getDashboardUrl() {
-      return new URL("dashboard.html", window.location.origin + "/").toString();
-    }
-
-    function getIndexUrl() {
-      return new URL("index.html", window.location.origin + "/").toString();
-    }
-
+    // Load real registered users count from public.users
     async function loadParticipantCount() {
-      participantCountEl.textContent = "1,234";
+      try {
+        const { count, error } = await supabase
+          .from("users")
+          .select("id", { count: "exact", head: true });
+
+        if (error) {
+          console.warn("Could not load participant count", error);
+          participantCountEl.textContent = "—";
+          return;
+        }
+
+        const value = typeof count === "number" ? count : 0;
+        participantCountEl.textContent = value.toLocaleString("en-IN");
+      } catch (e) {
+        console.warn("Could not load count, fallback", e);
+        participantCountEl.textContent = "—";
+      }
     }
 
     function renderSignedInHeader(user) {
@@ -160,67 +160,56 @@
       authArea.appendChild(wrap);
     }
 
-    async function redirectIfLoggedIn() {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("getSession error on index:", error);
-        return;
-      }
-
-      if (session && session.user) {
-        // Already authenticated → send to dashboard
-        window.location.href = getDashboardUrl();
-      }
-    }
-
     async function startLogin() {
-      authErrorEl.textContent = "";
+      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
 
-      // If already logged in, go straight to dashboard
+      // If already logged into PageZero (Supabase session), go straight to dashboard
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
-        window.location.href = getDashboardUrl();
+        window.location.href = dashboardUrl;
         return;
       }
 
-      // Always redirect back to index after Google login
-      const indexUrl = getIndexUrl();
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+      // Not logged into PageZero → start Google OAuth.
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
         options: {
-          redirectTo: indexUrl,
+          redirectTo: dashboardUrl,
           queryParams: {
-            prompt: "select_account",
-          },
-        },
+            prompt: 'select_account'
+          }
+        }
       });
-
-      if (error) {
-        console.error("OAuth error", error);
-        authErrorEl.textContent = "Sign-in failed: " + (error.message || "unknown error");
-      }
-    }
-
-    function showAuthErrorFromUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const error = params.get("error_description") || params.get("error");
-      if (error) {
-        authErrorEl.textContent = error;
-      }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      console.log("Index loaded at", window.location.href);
-      showAuthErrorFromUrl();
+      const dashboardUrl = "https://pagezero.app/dashboard.html";
+
+      // 1) Detect "just came back from OAuth" on this page
+      const isOAuthCallback =
+        window.location.hash &&
+        /access_token|refresh_token/.test(window.location.hash);
+
+      if (isOAuthCallback) {
+        // Clean URL (remove the token hash) for aesthetics
+        try {
+          history.replaceState({}, document.title, window.location.pathname);
+        } catch (_) { /* ignore */ }
+
+        // After Supabase processes the callback, session should exist.
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          // This was a login/return → send them to dashboard.
+          window.location.href = dashboardUrl;
+          return;
+        }
+        // If somehow no session, fall through to normal landing.
+      }
+
+      // 2) Normal landing behavior
       await loadParticipantCount();
 
-      // After implicit or PKCE flow, supabase-js will parse the URL on first load.
-      // Give it a moment to store the session, then redirect if logged in.
-      setTimeout(() => {
-        redirectIfLoggedIn();
-      }, 300);
-
+      // If already logged in (existing session), just show avatar/name in header
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
