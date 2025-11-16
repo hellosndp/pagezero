@@ -107,11 +107,11 @@
           <button id="btnNov" class="filter-btn active">November</button>
           <button id="btnWeek" class="filter-btn">This week</button>
         </div>
-        <button
+        <!-- <button
           id="shareBtn"
           class="text-sm px-3 py-1.5 border rounded-lg bg-white hover:bg-gray-50 cursor-pointer">
           Share
-        </button>
+        </button> -->
       </div>
 
       <div id="chartWrapper">
@@ -245,7 +245,7 @@
     const btnNov = document.getElementById('btnNov')
     const btnWeek = document.getElementById('btnWeek')
     const btnJourney = document.getElementById('btnJourney')
-    const shareBtn = document.getElementById('shareBtn')
+    // const shareBtn = document.getElementById('shareBtn')
     const legendRow = document.getElementById('legendRow')
     const headerAvatar = document.getElementById('headerAvatar')
     const headerName = document.getElementById('headerName')
@@ -1009,10 +1009,10 @@ async function copyShareImageToClipboard() {
 }
 
 // Hook up Share button
-shareBtn.addEventListener("click", (e) => {
-  e.preventDefault();
-  copyShareImageToClipboard();
-});
+// shareBtn.addEventListener("click", (e) => {
+//   e.preventDefault();
+//   copyShareImageToClipboard();
+// });
 
 
     // --- AUTH GUARD + BOOT ---
