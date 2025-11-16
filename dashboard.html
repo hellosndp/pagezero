@@ -225,11 +225,11 @@
 
     // constants/colors
     let TARGET_WORDS = 1667
-    let CURRENT_USER_ROW_ID = null;
     const COLOR_ZERO = '#ffffff'
     const COLOR_NORMAL = 'rgba(31,41,51,0.92)'
     const COLOR_OVER = '#16a34a'
     const COLOR_HIGHEST = '#f59e0b'
+    let CURRENT_USER_ROW_ID = null;
 
     // DOM refs
     const mainCanvas = document.getElementById('mainChart')
@@ -571,10 +571,7 @@
       let values = dateKeys.map(k => wordMap[k] || 0);
       let times  = dateKeys.map(k => timeMap[k] || 0);
 
-      if (values.every(v => v === 0)) {
-        values = dummyDailyValues(dateKeys.length);
-        times  = new Array(dateKeys.length).fill(0);
-      }
+      
 
       return { labels, values, times, dateKeys };
     }
@@ -681,6 +678,8 @@
       
 // 🔽 add this
 CURRENT_USER_ROW_ID = userRow.id;
+      console.log('CURRENT_USER_ROW_ID set to', CURRENT_USER_ROW_ID);
+
 
       try {
         const { data: userSettings, error: settingsErr } = await supabase
