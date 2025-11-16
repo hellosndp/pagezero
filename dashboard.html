@@ -106,7 +106,6 @@
           <button id="btnNov" class="filter-btn active">November</button>
           <button id="btnWeek" class="filter-btn">This week</button>
         </div>
-        <!-- Share currently disabled -->
         <button
           id="shareBtn"
           class="text-sm px-3 py-1.5 border rounded-lg bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -181,7 +180,7 @@
     <footer class="text-muted">Built for PageZero — minimal, clean.</footer>
   </div>
 
-  <!-- PROFILE MODAL (unused for now, kept for future) -->
+  <!-- PROFILE MODAL (kept for future) -->
   <div id="profileModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
     <div class="bg-white p-6 rounded-lg w-full max-w-md">
       <div class="flex items-center justify-between mb-4">
@@ -249,7 +248,6 @@
     function setSaveButtonState(state) {
       if (!saveTodayBtn) return;
 
-      // Reset dynamic styles
       saveTodayBtn.classList.remove(
         'opacity-60',
         'cursor-wait',
@@ -268,7 +266,6 @@
         saveTodayBtn.disabled = true;
         saveTodayBtn.classList.add('bg-green-100', 'text-green-700', 'border-green-500');
       } else {
-        // default / idle
         saveTodayBtn.textContent = 'Save';
       }
     }
@@ -276,7 +273,6 @@
     let chartInstance = null
     let currentMode = 'november' // 'november' | 'week' | 'journey'
 
-    // helpers
     function fmtExact(n){ return String(Number(n)) }
     function curDateISO(){ return new Date().toISOString().slice(0,10) }
     dateField.value = curDateISO()
@@ -322,7 +318,6 @@
       }
     }
 
-    // colors for bars
     function computeColors(values) {
       const maxVal = Math.max(...values)
       return values.map(v => {
@@ -461,7 +456,6 @@
       floatingTooltipTimeout = setTimeout(()=> { div.remove(); floatingTooltipTimeout = null }, 2500)
     }
 
-    // DATA FETCH BLOCK
     async function fetchDailyCountsBetween(startISO, endISO) {
       const { data, error } = await supabase
         .from('daily_wordcounts')
@@ -482,7 +476,6 @@
       return arr
     }
 
-    // ---------- RANGE + RENDER ----------
     async function loadRangeData(mode = 'november') {
       const now = new Date();
 
@@ -493,7 +486,7 @@
       if (mode === 'november') {
         const year = now.getFullYear();
         for (let d = 1; d <= 30; d++) {
-          const dt = new Date(year, 10, d); // month 10 = November
+          const dt = new Date(year, 10, d);
           const iso = dt.toISOString().slice(0, 10);
           dateKeys.push(iso);
           labels.push(`Nov ${d}`);
@@ -573,18 +566,16 @@
         const safeTimes = Array.isArray(times) ? times.map(t => Number(t) || 0) : [];
         const todayISO  = curDateISO();
 
-        // Count only days in this period that are up to (and including) today
         const elapsedDays = Array.isArray(dateKeys)
           ? dateKeys.filter(d => d <= todayISO).length
           : 0;
 
-        // Avoid division by zero; if elapsedDays is 0 (all in future), treat as 1
         const denomDays = Math.max(1, elapsedDays);
 
         const totalWords = values.reduce((a, b) => a + (b || 0), 0);
         const avgWords   = Math.round(totalWords / denomDays);
 
-        const totalTime  = safeTimes.reduce((a, b) => a + b, 0); // minutes
+        const totalTime  = safeTimes.reduce((a, b) => a + b, 0);
         const avgTime    = Math.round(totalTime / denomDays);
 
         totalWordsEl.textContent = fmtExact(totalWords);
@@ -606,7 +597,6 @@
     async function ensureUserRow(session) {
       const authUser = session.user
 
-      // Try to find existing row
       const { data: existing, error: fetchErr } = await supabase
         .from('users')
         .select('id, email, display_name, avatar_url, daily_target_words')
@@ -620,13 +610,12 @@
 
       if (existing) return existing
 
-      // If not found, create a row
       const payload = {
         auth_user_id: authUser.id,
         email: authUser.email,
         display_name: authUser.user_metadata?.full_name || authUser.email,
         avatar_url: authUser.user_metadata?.avatar_url || null,
-        daily_target_words: 1667  // default
+        daily_target_words: 1667
       }
 
       const { data: inserted, error: insertErr } = await supabase
@@ -666,7 +655,6 @@
         return
       }
 
-      // Load daily target words
       try {
         const { data: userSettings, error: settingsErr } = await supabase
           .from('users')
@@ -692,9 +680,8 @@
       }
     }
 
-    // ---------- NEW SESSIONS-BASED UPSERT ----------
+    // ---------- UPSERT ----------
     async function upsertToday(words, timeSpent, dayISO) {
-      // start UI state
       setSaveButtonState('saving');
       saveMsg.textContent = '';
 
@@ -719,7 +706,6 @@
       }
 
       try {
-        // 1) Insert a session row
         const { error: sessionErr } = await supabase
           .from('sessions')
           .insert({
@@ -732,7 +718,6 @@
 
         if (sessionErr) throw sessionErr;
 
-        // 2) Aggregate all sessions for that user+day
         const { data: aggRows, error: aggErr } = await supabase
           .from('sessions')
           .select('words, time_spent_minutes')
@@ -749,7 +734,6 @@
           totalMinutes += Number(r.time_spent_minutes) || 0;
         });
 
-        // 3) Upsert into daily_wordcounts
         const { error: upsertErr } = await supabase
           .from('daily_wordcounts')
           .upsert({
@@ -764,10 +748,8 @@
 
         if (upsertErr) throw upsertErr;
 
-        // 4) Refresh UI
         await loadDataAndRender(currentMode);
 
-        // Success UI
         saveMsg.textContent = 'Saved!';
         setSaveButtonState('saved');
         setTimeout(() => {
@@ -793,7 +775,6 @@
       await upsertToday(val, t, dayISO);
     }
 
-    // filters wiring
     function setActiveFilter(mode) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
       if (mode === 'november') btnNov.classList.add('active')
@@ -804,77 +785,40 @@
     btnWeek.addEventListener('click', ()=> { setActiveFilter('week'); loadDataAndRender('week') })
     btnJourney.addEventListener('click', ()=> { setActiveFilter('journey'); loadDataAndRender('journey') })
 
-    // Share button disabled for now
     shareBtn.addEventListener('click', (e) => {
       e.preventDefault();
       alert('Sharing coming soon.');
     });
 
-    // --- AUTH GUARD + BOOT (handles PKCE ?code= flow correctly) ---
-    async function ensureAuthenticatedOrRedirect() {
+    // --- SIMPLE AUTH GUARD: wait for session, then decide ---
+    async function waitForSessionOrRedirect() {
       const indexUrl = `${window.location.origin}/index.html`;
-      const url = window.location.href;
 
-      let session = null;
-
-      try {
-        const search = window.location.search || '';
-
-        const hasAuthCode  = /[?&]code=/.test(search);
-        const hasAuthError = /[?&]error=/.test(search);
-
-        // If Google / Supabase sent back an error, just send user home
-        if (hasAuthError) {
-          console.error('Auth error in callback URL:', search);
-          window.location.href = indexUrl;
-          return null;
-        }
-
-        // 1) If there's a ?code= in the URL, explicitly exchange it for a session
-        if (hasAuthCode) {
-          try {
-            const { data, error: exchErr } = await supabase.auth.exchangeCodeForSession(url);
-            if (exchErr) {
-              console.error('exchangeCodeForSession error:', exchErr);
-            } else {
-              session = data?.session || null;
-            }
-          } catch (e) {
-            console.error('exchangeCodeForSession threw:', e);
-          }
-        }
-
-        // 2) If we still don't have a session, ask Supabase for it
-        if (!session) {
+      // Try up to ~4.5s (15 * 300ms) for Supabase to finish exchanging the code
+      for (let i = 0; i < 15; i++) {
+        try {
           const { data, error } = await supabase.auth.getSession();
           if (error) {
-            console.error('getSession error:', error);
+            console.error('getSession error', error);
           }
-          session = data?.session || null;
+          const session = data?.session || null;
+          if (session && session.user) {
+            return session;
+          }
+        } catch (e) {
+          console.error('waitForSession getSession threw', e);
         }
-      } catch (e) {
-        console.error('ensureAuthenticatedOrRedirect fatal error:', e);
+        await new Promise(res => setTimeout(res, 300));
       }
 
-      // 3) If after all that we still have no user, redirect to home
-      if (!session || !session.user) {
-        window.location.href = indexUrl;
-        return null;
-      }
-
-      // 4) Clean the URL (remove ?code=..., ?state=..., hashes, etc.)
-      try {
-        history.replaceState({}, document.title, window.location.pathname);
-      } catch (_) {
-        // non-fatal
-      }
-
-      return session;
+      // Still nothing: treat as logged-out and go home
+      window.location.href = indexUrl;
+      return null;
     }
 
     // boot
     document.addEventListener('DOMContentLoaded', async () => {
-      const session = await ensureAuthenticatedOrRedirect();
+      const session = await waitForSessionOrRedirect();
       if (!session) return;
 
       await initProfileArea();
