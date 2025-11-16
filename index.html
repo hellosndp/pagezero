@@ -126,11 +126,10 @@
     const authArea = document.getElementById("auth-area");
 
     function getDashboardUrl() {
-      // Works whether you're on /, /index.html, or a subfolder
-      return new URL("dashboard.html", window.location.href).toString();
+      // Works for https://pagezero.app/index.html or just https://pagezero.app/
+      return new URL("dashboard.html", window.location.origin + window.location.pathname).toString().replace(/index\.html$/, "dashboard.html");
     }
 
-    // Placeholder count logic – replace with real endpoint / RPC later if you want
     async function loadParticipantCount() {
       try {
         participantCountEl.textContent = "1,234";
@@ -163,14 +162,12 @@
     async function startLogin() {
       const dashboardUrl = getDashboardUrl();
 
-      // If already logged in, just go to dashboard.
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         window.location.href = dashboardUrl;
         return;
       }
 
-      // Start Google OAuth using implicit flow; Supabase will handle the hash.
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -190,7 +187,6 @@
     document.addEventListener("DOMContentLoaded", async () => {
       await loadParticipantCount();
 
-      // If already logged in, show avatar/name
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
