@@ -327,7 +327,6 @@
       }
     }
 
-    // colors for bars
     function computeColors(values) {
       const maxVal = Math.max(...values)
       return values.map(v => {
@@ -466,7 +465,6 @@
       floatingTooltipTimeout = setTimeout(()=> { div.remove(); floatingTooltipTimeout = null }, 2500)
     }
 
-    // DATA FETCH BLOCK
     async function fetchDailyCountsBetween(startISO, endISO) {
       const { data, error } = await supabase
         .from('daily_wordcounts')
@@ -487,7 +485,6 @@
       return arr
     }
 
-    // ---------- RANGE + RENDER ----------
     async function loadRangeData(mode = 'november') {
       const now = new Date();
 
@@ -578,18 +575,16 @@
         const safeTimes = Array.isArray(times) ? times.map(t => Number(t) || 0) : [];
         const todayISO  = curDateISO();
 
-        // Count only days in this period that are up to (and including) today
         const elapsedDays = Array.isArray(dateKeys)
           ? dateKeys.filter(d => d <= todayISO).length
           : 0;
 
-        // Avoid division by zero; if elapsedDays is 0 (all in future), treat as 1
         const denomDays = Math.max(1, elapsedDays);
 
         const totalWords = values.reduce((a, b) => a + (b || 0), 0);
         const avgWords   = Math.round(totalWords / denomDays);
 
-        const totalTime  = safeTimes.reduce((a, b) => a + b, 0); // minutes
+        const totalTime  = safeTimes.reduce((a, b) => a + b, 0);
         const avgTime    = Math.round(totalTime / denomDays);
 
         totalWordsEl.textContent = fmtExact(totalWords);
@@ -610,7 +605,6 @@
     async function ensureUserRow(session) {
       const authUser = session.user
 
-      // Try to find existing row
       const { data: existing, error: fetchErr } = await supabase
         .from('users')
         .select('id, email, display_name, avatar_url, daily_target_words')
@@ -624,13 +618,12 @@
 
       if (existing) return existing
 
-      // If not found, create a row
       const payload = {
         auth_user_id: authUser.id,
         email: authUser.email,
         display_name: authUser.user_metadata?.full_name || authUser.email,
         avatar_url: authUser.user_metadata?.avatar_url || null,
-        daily_target_words: 1667  // default
+        daily_target_words: 1667
       }
 
       const { data: inserted, error: insertErr } = await supabase
@@ -648,7 +641,6 @@
     }
 
     async function initProfileArea() {
-      // Clean up hash after implicit callback, but only after Supabase has had a chance
       if (location.hash && /access_token|refresh_token/.test(location.hash)) {
         setTimeout(()=> history.replaceState({}, document.title, location.pathname + location.search), 300)
       }
@@ -668,7 +660,6 @@
         return
       }
 
-      // Make sure app-level user row exists
       const userRow = await ensureUserRow(session)
       if (!userRow) {
         headerName.textContent = 'Preparing account'
@@ -676,7 +667,6 @@
         return
       }
 
-      // Fetch daily target for this user and update TARGET_WORDS
       try {
         const { data: userSettings, error: settingsErr } = await supabase
           .from('users')
@@ -687,7 +677,6 @@
         if (!settingsErr && userSettings && typeof userSettings.daily_target_words === 'number') {
           if (userSettings.daily_target_words > 0) {
             TARGET_WORDS = userSettings.daily_target_words
-            // Re-render chart with new target line & legend
             await loadDataAndRender(currentMode)
           }
         }
@@ -699,15 +688,12 @@
       headerName.textContent = userRow.display_name || userRow.email
       headerEmail.textContent = userRow.email || ''
 
-      // Go to profile page when avatar is clicked
       profileBtn.onclick = () => {
         window.location.href = 'profile.html'
       }
     }
 
-    // ---------- NEW SESSIONS-BASED UPSERT ----------
     async function upsertToday(words, timeSpent, dayISO) {
-      // start UI state
       setSaveButtonState('saving');
       saveMsg.textContent = '';
 
@@ -732,7 +718,6 @@
       }
 
       try {
-        // 1) Insert a session row
         const { error: sessionErr } = await supabase
           .from('sessions')
           .insert({
@@ -745,7 +730,6 @@
 
         if (sessionErr) throw sessionErr;
 
-        // 2) Aggregate all sessions for that user+day
         const { data: aggRows, error: aggErr } = await supabase
           .from('sessions')
           .select('words, time_spent_minutes')
@@ -762,7 +746,6 @@
           totalMinutes += Number(r.time_spent_minutes) || 0;
         });
 
-        // 3) Upsert into daily_wordcounts
         const { error: upsertErr } = await supabase
           .from('daily_wordcounts')
           .upsert({
@@ -777,10 +760,8 @@
 
         if (upsertErr) throw upsertErr;
 
-        // 4) Refresh UI
         await loadDataAndRender(currentMode);
 
-        // Success UI
         saveMsg.textContent = 'Saved!';
         setSaveButtonState('saved');
         setTimeout(() => {
@@ -806,7 +787,6 @@
       await upsertToday(val, t, dayISO);
     }
 
-    // filters wiring
     function setActiveFilter(mode) {
       document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
       if (mode === 'november') btnNov.classList.add('active')
@@ -817,7 +797,6 @@
     btnWeek.addEventListener('click', ()=> { setActiveFilter('week'); loadDataAndRender('week') })
     btnJourney.addEventListener('click', ()=> { setActiveFilter('journey'); loadDataAndRender('journey') })
 
-    // ---------- SHARE / EXPORT ----------
     async function fetchImageAsDataUrl(url) {
       if (!url) return null
       try {
@@ -913,6 +892,7 @@
 
       ctx.font = '12px Inconsolata, monospace'
       ctx.fillStyle = 'rgba(31,41,51,0.6)'
+      ctx.textContent = 'pagezero.app'
       ctx.fillText('pagezero.app', padding + avatarSize + 12, padding + 8 + 22)
 
       ctx.drawImage(chartImg, padding, padding + headerH, chartW - padding * 2, chartScaledH)
@@ -967,6 +947,13 @@
       if (!session || !session.user) {
         window.location.href = indexUrl;
         return null;
+      }
+
+      // Clean the URL of any hash tokens (after Supabase has parsed them)
+      if (window.location.hash && /access_token|refresh_token/.test(window.location.hash)) {
+        try {
+          history.replaceState({}, document.title, window.location.pathname + window.location.search);
+        } catch (_) {}
       }
 
       return session;
