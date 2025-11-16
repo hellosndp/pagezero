@@ -936,28 +936,54 @@
     shareBtn.addEventListener('click', exportCopyDownload)
 
     // --- AUTH GUARD + BOOT ---
-    async function ensureAuthenticatedOrRedirect() {
-      const indexUrl = new URL('index.html', window.location.href).toString();
+async function ensureAuthenticatedOrRedirect() {
+  const indexUrl = new URL('index.html', window.location.href).toString();
 
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('getSession error', error);
-      }
+  const hasAuthCode =
+    window.location.search && /[?&]code=/.test(window.location.search);
 
-      if (!session || !session.user) {
-        window.location.href = indexUrl;
-        return null;
-      }
+  const hasAuthHash =
+    window.location.hash &&
+    /access_token|refresh_token/.test(window.location.hash);
 
-      // Clean the URL of any hash tokens (after Supabase has parsed them)
-      if (window.location.hash && /access_token|refresh_token/.test(window.location.hash)) {
-        try {
-          history.replaceState({}, document.title, window.location.pathname + window.location.search);
-        } catch (_) {}
-      }
+  const hasAuthStuff = hasAuthCode || hasAuthHash;
 
-      return session;
+  async function getCurrentSession() {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error('getSession error', error);
     }
+    return data?.session || null;
+  }
+
+  let session = await getCurrentSession();
+
+  // If we just came back from OAuth, give Supabase time to exchange the code
+  if (!session && hasAuthStuff) {
+    for (let i = 0; i < 10 && !session; i++) {
+      await new Promise((res) => setTimeout(res, 200)); // total up to ~2s
+      session = await getCurrentSession();
+    }
+  }
+
+  if (!session || !session.user) {
+    // Still nothing → treat as unauthenticated
+    window.location.href = indexUrl;
+    return null;
+  }
+
+  // Clean the URL of any auth query/hash now that we *do* have a session
+  if (hasAuthStuff) {
+    try {
+      history.replaceState({}, document.title, window.location.pathname);
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  return session;
+}
+
 
     document.addEventListener('DOMContentLoaded', async () => {
       const session = await ensureAuthenticatedOrRedirect();
