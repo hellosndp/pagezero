@@ -488,7 +488,7 @@
       const { data, error } = await supabase
         .from('daily_wordcounts')
         .select('day, words, time_spent_minutes')
-        .eq('user_id', CURRENT_USER_ID)       // 🔒 per-user
+        .eq('user_id', CURRENT_USER_ID)
         .gte('day', startISO)
         .lte('day', endISO);
 
@@ -497,16 +497,6 @@
         return [];
       }
       return data || [];
-    }
-
-    function dummyDailyValues(length) {
-      const base = 1200
-      const arr = []
-      for (let i=0;i<length;i++) {
-        const ramp = Math.round(base + (i * 60) + (Math.random() * 1400))
-        arr.push(ramp)
-      }
-      return arr
     }
 
     async function loadRangeData(mode = 'november') {
@@ -520,7 +510,7 @@
         const year = now.getFullYear();
         for (let d = 1; d <= 30; d++) {
           const dt = new Date(year, 10, d); // month 10 = November
-          const iso = isoFromLocal(dt);     // local date
+          const iso = isoFromLocal(dt);
           dateKeys.push(iso);
           labels.push(`Nov ${d}`);
         }
@@ -533,7 +523,7 @@
         for (let i = 0; i < 7; i++) {
           const d = new Date(sunday);
           d.setDate(sunday.getDate() + i);
-          const iso = isoFromLocal(d);      // local date
+          const iso = isoFromLocal(d);
           dateKeys.push(iso);
           labels.push(
             new Intl.DateTimeFormat('en', { weekday: 'short', day: 'numeric' }).format(d)
@@ -548,7 +538,7 @@
         for (let i = num - 1; i >= 0; i--) {
           const d = new Date(end);
           d.setDate(end.getDate() - i);
-          const iso = isoFromLocal(d);      // local date
+          const iso = isoFromLocal(d);
           tmp.push({ iso, d });
         }
         dateKeys = tmp.map(o => o.iso);
@@ -570,7 +560,7 @@
         rows.forEach(r => {
           const dStr = typeof r.day === 'string'
             ? r.day.slice(0, 10)
-            : localISODate(new Date(r.day)); // normalize
+            : localISODate(new Date(r.day));
 
           const w = Number(r.words) || 0;
           const t = Number(r.time_spent_minutes) || 0;
@@ -580,13 +570,8 @@
         });
       }
 
-      let values = dateKeys.map(k => wordMap[k] || 0);
-      let times  = dateKeys.map(k => timeMap[k] || 0);
-
-      if (values.every(v => v === 0)) {
-        values = dummyDailyValues(dateKeys.length);
-        times  = new Array(dateKeys.length).fill(0);
-      }
+      const values = dateKeys.map(k => wordMap[k] || 0);
+      const times  = dateKeys.map(k => timeMap[k] || 0);
 
       return { labels, values, times, dateKeys };
     }
@@ -642,7 +627,7 @@
       }
 
       if (existing) {
-        CURRENT_USER_ID = existing.id;   // 🔒 store for later queries
+        CURRENT_USER_ID = existing.id;
         return existing;
       }
 
@@ -665,7 +650,7 @@
         return null
       }
 
-      CURRENT_USER_ID = inserted.id;     // 🔒 store new id
+      CURRENT_USER_ID = inserted.id;
       return inserted
     }
 
@@ -722,7 +707,6 @@
       setSaveButtonState('saving');
       saveMsg.textContent = '';
 
-      // Extra guard: prevent future dates in JS as well
       const today = curDateISO();
       if (dayISO > today) {
         saveMsg.textContent = 'You can’t log future days.';
@@ -866,7 +850,6 @@
         }
       }
 
-      // If we still don't have a session, poll getSession a few times
       if (!session) {
         for (let i = 0; i < 10; i++) {
           try {
@@ -892,7 +875,6 @@
         return null;
       }
 
-      // Clean the URL (drop code/error params)
       try {
         history.replaceState({}, document.title, window.location.pathname);
       } catch (_) {}
