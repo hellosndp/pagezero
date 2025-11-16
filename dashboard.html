@@ -240,6 +240,9 @@
     const COLOR_OVER = '#16a34a'
     const COLOR_HIGHEST = '#f59e0b'
 
+    // current user's internal id in "users" table
+    let CURRENT_USER_ID = null;
+
     // DOM refs
     const mainCanvas = document.getElementById('mainChart')
     const totalWordsEl = document.getElementById('totalWords')
@@ -291,8 +294,10 @@
 
     function fmtExact(n){ return String(Number(n)) }
 
-    // Set default date to *local* today
-    dateField.value = curDateISO()
+    // Set default date to *local* today and prevent future dates
+    const todayISO = curDateISO();
+    dateField.value = todayISO;
+    dateField.max = todayISO;
 
     // target line plugin
     const targetLinePlugin = {
@@ -473,14 +478,25 @@
       floatingTooltipTimeout = setTimeout(()=> { div.remove(); floatingTooltipTimeout = null }, 2500)
     }
 
+    // ---------- DATA FETCH (SCOPED PER USER) ----------
     async function fetchDailyCountsBetween(startISO, endISO) {
+      if (!CURRENT_USER_ID) {
+        console.warn('No CURRENT_USER_ID set yet; returning empty data');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('daily_wordcounts')
         .select('day, words, time_spent_minutes')
+        .eq('user_id', CURRENT_USER_ID)       // 🔒 per-user
         .gte('day', startISO)
-        .lte('day', endISO)
-      if (error) { console.warn('fetchDailyCountsBetween error', error); return [] }
-      return data
+        .lte('day', endISO);
+
+      if (error) {
+        console.warn('fetchDailyCountsBetween error', error);
+        return [];
+      }
+      return data || [];
     }
 
     function dummyDailyValues(length) {
@@ -554,7 +570,7 @@
         rows.forEach(r => {
           const dStr = typeof r.day === 'string'
             ? r.day.slice(0, 10)
-            : localISODate(new Date(r.day)); // normalize any Date to local YYYY-MM-DD
+            : localISODate(new Date(r.day)); // normalize
 
           const w = Number(r.words) || 0;
           const t = Number(r.time_spent_minutes) || 0;
@@ -625,7 +641,10 @@
         return null
       }
 
-      if (existing) return existing
+      if (existing) {
+        CURRENT_USER_ID = existing.id;   // 🔒 store for later queries
+        return existing;
+      }
 
       const payload = {
         auth_user_id: authUser.id,
@@ -646,6 +665,7 @@
         return null
       }
 
+      CURRENT_USER_ID = inserted.id;     // 🔒 store new id
       return inserted
     }
 
@@ -701,6 +721,14 @@
     async function upsertToday(words, timeSpent, dayISO) {
       setSaveButtonState('saving');
       saveMsg.textContent = '';
+
+      // Extra guard: prevent future dates in JS as well
+      const today = curDateISO();
+      if (dayISO > today) {
+        saveMsg.textContent = 'You can’t log future days.';
+        setSaveButtonState('idle');
+        return;
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session || !session.user) {
