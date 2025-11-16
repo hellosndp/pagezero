@@ -160,7 +160,7 @@
       }
 
       // Not logged into PageZero → start Google OAuth.
-      // prompt: 'select_account' makes Google show the account chooser instead of silently picking one.
+      // prompt: 'select_account' = show Google account chooser instead of silent auto-login.
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -173,10 +173,33 @@
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      // Always show landing page
+      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+
+      // 1) Detect "just came back from OAuth" on this page
+      const isOAuthCallback =
+        window.location.hash &&
+        /access_token|refresh_token/.test(window.location.hash);
+
+      if (isOAuthCallback) {
+        // Clean URL (remove the token hash) for aesthetics
+        try {
+          history.replaceState({}, document.title, window.location.pathname);
+        } catch (_) { /* ignore */ }
+
+        // After Supabase processes the callback, session should exist.
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          // This was a login/return → send them to dashboard.
+          window.location.href = dashboardUrl;
+          return;
+        }
+        // If somehow no session, fall through to normal landing.
+      }
+
+      // 2) Normal landing behavior
       await loadParticipantCount();
 
-      // If already logged in, just show their avatar/name in header (no redirect)
+      // If already logged in (existing session), just show avatar/name in header
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
