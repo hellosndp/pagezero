@@ -112,20 +112,31 @@
     const SUPABASE_URL = "https://fagmvslaoyiqonyphbsh.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZhZ212c2xhb3lpcW9ueXBoYnNoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMjQ2NDAsImV4cCI6MjA3ODgwMDY0MH0.5abTldTV0IoeVqQ8RzaJjFM1z25coWxPbKhqhPJPsUI";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
 
     const signinBtn = document.getElementById("signinBtn");
     const joinNowBtn = document.getElementById("joinNow");
     const participantCountEl = document.getElementById("participantCount");
     const authArea = document.getElementById("auth-area");
 
+    function getDashboardUrl() {
+      // Works whether you're on /, /index.html, or a subfolder
+      return new URL("dashboard.html", window.location.href).toString();
+    }
+
     // Placeholder count logic – replace with real endpoint / RPC later if you want
     async function loadParticipantCount() {
       try {
-        participantCountEl.textContent = '1,234';
+        participantCountEl.textContent = "1,234";
       } catch (e) {
         console.warn("Could not load count, using fallback", e);
-        participantCountEl.textContent = '1,234';
+        participantCountEl.textContent = "1,234";
       }
     }
 
@@ -150,56 +161,36 @@
     }
 
     async function startLogin() {
-      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
+      const dashboardUrl = getDashboardUrl();
 
-      // If already logged into PageZero (Supabase session), go straight to dashboard
+      // If already logged in, just go to dashboard.
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         window.location.href = dashboardUrl;
         return;
       }
 
-      // Not logged into PageZero → start Google OAuth.
-      // prompt: 'select_account' = show Google account chooser instead of silent auto-login.
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
+      // Start Google OAuth using implicit flow; Supabase will handle the hash.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
         options: {
           redirectTo: dashboardUrl,
           queryParams: {
-            prompt: 'select_account'
-          }
-        }
+            prompt: "select_account",
+          },
+        },
       });
+
+      if (error) {
+        console.error("OAuth error", error);
+        alert("Sign-in failed. Check console for details.");
+      }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const dashboardUrl = new URL('dashboard.html', window.location.href).toString();
-
-      // 1) Detect "just came back from OAuth" on this page
-      const isOAuthCallback =
-        window.location.hash &&
-        /access_token|refresh_token/.test(window.location.hash);
-
-      if (isOAuthCallback) {
-        // Clean URL (remove the token hash) for aesthetics
-        try {
-          history.replaceState({}, document.title, window.location.pathname);
-        } catch (_) { /* ignore */ }
-
-        // After Supabase processes the callback, session should exist.
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session && session.user) {
-          // This was a login/return → send them to dashboard.
-          window.location.href = dashboardUrl;
-          return;
-        }
-        // If somehow no session, fall through to normal landing.
-      }
-
-      // 2) Normal landing behavior
       await loadParticipantCount();
 
-      // If already logged in (existing session), just show avatar/name in header
+      // If already logged in, show avatar/name
       const { data: { session } } = await supabase.auth.getSession();
       if (session && session.user) {
         renderSignedInHeader(session.user);
