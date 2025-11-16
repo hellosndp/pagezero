@@ -955,11 +955,22 @@ saveTodayBtn.onclick = async () => {
 
     // boot
     document.addEventListener('DOMContentLoaded', async () => {
-      await initProfileArea()
-      setActiveFilter(currentMode)
-      await loadDataAndRender(currentMode)
-      window.addEventListener('resize', ()=> { if (chartInstance) chartInstance.update() })
-    })
+  // AUTH GUARD: if no Supabase session, send them to index (home)
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session || !session.user) {
+    window.location.href = 'index.html';  // or '/' if that works on your hosting
+    return;
+  }
+
+  await initProfileArea();
+  setActiveFilter(currentMode);
+  await loadDataAndRender(currentMode);
+
+  window.addEventListener('resize', () => {
+    if (chartInstance) chartInstance.update();
+  });
+});
+
   </script>
 </body>
 </html>
