@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anonymous Sprint — Digital Typewriter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --paper-bg:#f5f0e8;--paper-surface:#faf7f2;--ink:#1a1a1a;--ink-muted:#6b6560;--ink-faint:#c8c0b4;
+      --accent:#2c5f2e;--accent-glow:rgba(44,95,46,0.4);--border:#d4cdc4;
+    }
+    .dark{
+      --paper-bg:#1a1917;--paper-surface:#222220;--ink:#e8e3d8;--ink-muted:#8a8278;--ink-faint:#3a3832;
+      --accent:#5a9e5c;--accent-glow:rgba(90,158,92,0.4);--border:#333028;
+    }
+    body,html{height:100%;font-family:'Courier Prime',monospace}
+    #app{min-height:100vh;background:var(--paper-bg);color:var(--ink);transition:background 0.3s,color 0.3s;position:relative;overflow:hidden}
+    #progress-bar-wrap{position:fixed;top:0;left:0;right:0;z-index:20}
+    #top-bar{display:flex;justify-content:space-between;align-items:center;padding:8px 20px;font-size:11px;color:var(--ink-muted);letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--ink-faint);background:var(--paper-bg);transition:background 0.3s}
+    #progress-track{height:3px;background:var(--ink-faint);position:relative}
+    #progress-fill{height:100%;background:var(--accent);transition:width 0.8s ease;position:relative}
+    #progress-fill.pulse::after{content:'';position:absolute;right:0;top:-3px;width:12px;height:9px;background:var(--accent);border-radius:50%;box-shadow:0 0 10px 4px var(--accent-glow);animation:pulse-anim 0.8s ease-out forwards}
+    @keyframes pulse-anim{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(2.5)}}
+    #main{padding-top:52px;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+    #editor-wrap{width:100%;max-width:640px;padding:40px 20px 60px;flex:1}
+    #writer{width:100%;min-height:calc(100vh - 200px);background:transparent;border:none;outline:none;resize:none;font-family:'Courier Prime',monospace;font-size:18px;line-height:1.8;color:var(--ink);caret-color:var(--accent)}
+    #writer::placeholder{color:var(--ink-faint)}
+    #writer:disabled{opacity:0.7;cursor:not-allowed}
+    #word-counter{text-align:right;font-size:11px;color:var(--ink-muted);letter-spacing:0.06em;margin-top:8px;border-top:1px solid var(--ink-faint);padding-top:8px}
+    .theme-btn{background:none;border:1px solid var(--border);color:var(--ink-muted);padding:4px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;letter-spacing:0.06em;transition:all 0.2s}
+    .theme-btn:hover{border-color:var(--accent);color:var(--accent)}
+    #overlay{position:fixed;inset:0;background:rgba(26,25,23,0.88);z-index:30;display:flex;align-items:center;justify-content:center}
+    .dark #overlay{background:rgba(10,10,9,0.92)}
+    #landing-card{background:var(--paper-surface);border:1px solid var(--border);border-radius:2px;padding:40px 48px;max-width:480px;width:90%;text-align:center}
+    #landing-card h1{font-size:26px;font-weight:700;letter-spacing:0.02em;margin-bottom:8px}
+    #landing-card .sub{font-size:13px;color:var(--ink-muted);margin-bottom:28px;line-height:1.7}
+    #landing-card .rule{border:none;border-top:1px solid var(--ink-faint);margin:24px 0}
+    .stat-row{display:flex;gap:24px;justify-content:center;margin-bottom:28px}
+    .stat-box{font-size:11px;color:var(--ink-muted);letter-spacing:0.06em;text-align:center}
+    .stat-box .val{font-size:20px;font-weight:700;color:var(--ink);display:block;margin-bottom:2px}
+    #start-btn{background:var(--accent);color:#fff;border:none;padding:12px 36px;font-family:'Courier Prime',monospace;font-size:14px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;border-radius:2px;transition:opacity 0.2s}
+    #start-btn:hover{opacity:0.85}
+    #modal-wrap{position:fixed;inset:0;background:rgba(26,25,23,0.88);z-index:40;display:none;align-items:center;justify-content:center}
+    #modal{background:var(--paper-surface);border:1px solid var(--border);border-radius:2px;padding:40px 48px;max-width:500px;width:90%;text-align:center}
+    #modal h2{font-size:22px;font-weight:700;margin-bottom:6px}
+    #modal .contrib{font-size:38px;font-weight:700;color:var(--accent);margin:16px 0 4px}
+    #modal .sub{font-size:13px;color:var(--ink-muted);margin-bottom:24px;line-height:1.6}
+    #modal input[type=email]{width:100%;padding:10px 14px;background:transparent;border:1px solid var(--border);font-family:'Courier Prime',monospace;font-size:14px;color:var(--ink);border-radius:2px;outline:none;margin-bottom:12px}
+    #modal input[type=email]:focus{border-color:var(--accent)}
+    #save-btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;font-family:'Courier Prime',monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;border-radius:2px}
+    #save-btn:hover{opacity:0.85}
+    #modal .skip{font-size:11px;color:var(--ink-muted);margin-top:12px;cursor:pointer;letter-spacing:0.05em;text-decoration:underline}
+    #sync-badge{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--accent);letter-spacing:0.1em;opacity:0;transition:opacity 0.5s;text-transform:uppercase;pointer-events:none}
+    @media(max-width:600px){
+      #landing-card,#modal{padding:28px 24px}
+      #writer{font-size:16px}
+      .stat-row{gap:16px}
+      #editor-wrap{padding:24px 16px 40px}
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="progress-bar-wrap">
+    <div id="top-bar">
+      <span id="community-label">Community: <strong id="global-count">4,312</strong> / 10,000 words</span>
+      <button class="theme-btn" id="theme-toggle">☀ Paper</button>
+      <span id="timer-display">25:00</span>
+    </div>
+    <div id="progress-track">
+      <div id="progress-fill" style="width:43.12%"></div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="editor-wrap">
+      <textarea id="writer" placeholder="Begin writing. The clock starts when you do…" disabled></textarea>
+      <div id="word-counter">Your words: <span id="my-count">0</span></div>
+    </div>
+    <span id="sync-badge">● synced</span>
+  </div>
+
+  <div id="overlay">
+    <div id="landing-card">
+      <h1>Anonymous Sprint</h1>
+      <p class="sub">Write freely. No account needed.<br>Your words count toward a shared community goal.</p>
+      <hr class="rule">
+      <div class="stat-row">
+        <div class="stat-box"><span class="val" id="l-global">4,312</span>Community words</div>
+        <div class="stat-box"><span class="val">10,000</span>Sprint goal</div>
+        <div class="stat-box"><span class="val">25:00</span>Time left</div>
+      </div>
+      <button id="start-btn">↵ Start Writing</button>
+    </div>
+  </div>
+
+  <div id="modal-wrap">
+    <div id="modal">
+      <h2>Session Complete.</h2>
+      <div class="contrib" id="modal-words">0</div>
+      <p class="sub">words contributed to the community goal.<br>Enter your email to save your draft and join the next sprint.</p>
+      <input type="email" id="email-input" placeholder="your@email.com">
+      <button id="save-btn">Save My Words</button>
+      <p class="skip" id="skip-btn">Skip — discard session</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const SPRINT_SECONDS = 25 * 60;
+  const GOAL = 10000;
+  const MOCK_GLOBAL_START = 4312;
+
+  let darkMode = false;
+  let running = false;
+  let secondsLeft = SPRINT_SECONDS;
+  let timerInterval = null;
+  let heartbeatInterval = null;
+  let lastWordCount = 0;
+  let myWords = 0;
+  let globalWords = MOCK_GLOBAL_START;
+
+  const app = document.getElementById('app');
+  const writer = document.getElementById('writer');
+  const overlay = document.getElementById('overlay');
+  const modalWrap = document.getElementById('modal-wrap');
+  const progressFill = document.getElementById('progress-fill');
+  const timerDisplay = document.getElementById('timer-display');
+  const globalCount = document.getElementById('global-count');
+  const lGlobal = document.getElementById('l-global');
+  const myCountEl = document.getElementById('my-count');
+  const modalWords = document.getElementById('modal-words');
+  const syncBadge = document.getElementById('sync-badge');
+  const themeToggle = document.getElementById('theme-toggle');
+
+  function countWords(text){
+    return text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  }
+
+  function formatTime(s){
+    const m = Math.floor(s/60);
+    const sec = s % 60;
+    return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function updateProgress(){
+    const pct = Math.min((globalWords / GOAL) * 100, 100);
+    progressFill.style.width = pct.toFixed(2) + '%';
+    const fmt = globalWords.toLocaleString();
+    globalCount.textContent = fmt;
+    if(lGlobal) lGlobal.textContent = fmt;
+  }
+
+  function pulseProgress(){
+    progressFill.classList.remove('pulse');
+    void progressFill.offsetWidth;
+    progressFill.classList.add('pulse');
+    syncBadge.style.opacity = '1';
+    setTimeout(function(){ syncBadge.style.opacity = '0'; }, 1500);
+    setTimeout(function(){ progressFill.classList.remove('pulse'); }, 900);
+  }
+
+  function heartbeat(){
+    const currentWords = countWords(writer.value);
+    const newWords = Math.max(0, currentWords - lastWordCount);
+    if(newWords > 0){
+      myWords += newWords;
+      globalWords = Math.min(GOAL, globalWords + newWords + Math.floor(Math.random() * 3));
+      lastWordCount = currentWords;
+      myCountEl.textContent = myWords.toLocaleString();
+      updateProgress();
+      pulseProgress();
+    } else {
+      const ambient = Math.floor(Math.random() * 5);
+      if(ambient > 0 && globalWords < GOAL){
+        globalWords = Math.min(GOAL, globalWords + ambient);
+        updateProgress();
+      }
+    }
+  }
+
+  function endSession(){
+    clearInterval(timerInterval);
+    clearInterval(heartbeatInterval);
+    running = false;
+    writer.disabled = true;
+    timerDisplay.textContent = '00:00';
+    modalWords.textContent = myWords.toLocaleString();
+    modalWrap.style.display = 'flex';
+  }
+
+  function startSprint(){
+    overlay.style.display = 'none';
+    writer.disabled = false;
+    writer.focus();
+    running = true;
+
+    timerInterval = setInterval(function(){
+      secondsLeft--;
+      timerDisplay.textContent = formatTime(secondsLeft);
+      if(secondsLeft <= 0) endSession();
+    }, 1000);
+
+    heartbeatInterval = setInterval(heartbeat, 5000);
+
+    setInterval(function(){
+      if(globalWords < GOAL && running){
+        globalWords = Math.min(GOAL, globalWords + Math.floor(Math.random() * 2));
+        updateProgress();
+      }
+    }, 3000);
+  }
+
+  document.getElementById('start-btn').addEventListener('click', startSprint);
+
+  themeToggle.addEventListener('click', function(){
+    darkMode = !darkMode;
+    app.classList.toggle('dark', darkMode);
+    themeToggle.textContent = darkMode ? '○ Ink' : '☀ Paper';
+  });
+
+  document.getElementById('save-btn').addEventListener('click', function(){
+    const email = document.getElementById('email-input').value;
+    if(!email || !email.includes('@')){
+      document.getElementById('email-input').style.borderColor = 'var(--accent)';
+      return;
+    }
+    document.getElementById('modal').innerHTML =
+      '<h2>Saved.</h2><p style="margin-top:16px;color:var(--ink-muted);font-size:13px;line-height:1.8">Check <strong>' + email + '</strong> for your draft.<br>See you at the next sprint.</p>';
+  });
+
+  document.getElementById('skip-btn').addEventListener('click', function(){
+    modalWrap.style.display = 'none';
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>
